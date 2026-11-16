@@ -610,9 +610,7 @@
       form.addEventListener('submit',()=>{
         const item=tiles.find(t=>t.id===editing);
         if(item)item.category=select.value;
-        const push=tiles.push.bind(tiles);
-        tiles.push=(...items)=>push(...items.map(item=>({...item,category:select.value||'Tiles'})));
-        setTimeout(()=>{tiles.push=push;},0);
+        window.__kandyChosenCategory=select.value||'Tiles';
       },true);
     }
     const editButtons=$('admin-list');
@@ -651,6 +649,11 @@
     }
   };
   ensureCategories();
+  if(!tiles.__kandyCategoryPushHook){
+    const originalPush=tiles.push.bind(tiles);
+    tiles.push=(...items)=>originalPush(...items.map(item=>item.category?item:{...item,category:window.__kandyChosenCategory||'Tiles'}));
+    Object.defineProperty(tiles,'__kandyCategoryPushHook',{value:true});
+  }
   if(typeof renderAdmin==='function')setTimeout(()=>{if(adminUnlocked)renderAdmin();},250);
   setTimeout(()=>view(),350);
 })();
