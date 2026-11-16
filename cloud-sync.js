@@ -317,3 +317,65 @@
   })();
 
 })();
+
+// Water-touch ripple: a soft liquid ring appears wherever the Admin Login panel is clicked/tapped.
+(function addWaterTouchRipple() {
+  if (window.__kandyWaterTouchRipple) return;
+  window.__kandyWaterTouchRipple = true;
+
+  const css = document.createElement('style');
+  css.id = 'kandy-water-touch-ripple-style';
+  css.textContent = `
+    #login-panel { position:relative; overflow:hidden; }
+    .water-touch-ripple {
+      position:absolute; z-index:8; width:22px; height:22px;
+      border-radius:50%; pointer-events:none; transform:translate(-50%,-50%) scale(.15);
+      background:radial-gradient(circle,rgba(255,255,255,.34) 0 12%,rgba(133,226,255,.22) 35%,rgba(91,205,246,.08) 62%,transparent 72%);
+      border:1px solid rgba(236,252,255,.88);
+      box-shadow:0 0 9px rgba(175,239,255,.55),inset 0 0 8px rgba(255,255,255,.72);
+      animation:waterTouchExpand .85s cubic-bezier(.12,.58,.28,1) forwards;
+    }
+    .water-touch-ripple:before,.water-touch-ripple:after {
+      content:"";position:absolute;inset:-9px;border:1px solid rgba(223,249,255,.72);
+      border-radius:50%;animation:waterTouchRing .85s ease-out forwards;
+    }
+    .water-touch-ripple:after { inset:-18px; border-color:rgba(111,216,250,.48); animation-delay:.07s; }
+    .water-touch-drop {
+      position:absolute;width:5px;height:5px;border-radius:50%;
+      background:radial-gradient(circle at 30% 25%,#fff,rgba(122,220,255,.62));
+      box-shadow:0 0 7px rgba(190,242,255,.8);pointer-events:none;
+      animation:waterTouchDrop .65s ease-out forwards;
+    }
+    @keyframes waterTouchExpand { 0%{opacity:.95;transform:translate(-50%,-50%) scale(.15)} 65%{opacity:.65} 100%{opacity:0;transform:translate(-50%,-50%) scale(4.4)} }
+    @keyframes waterTouchRing { 0%{transform:scale(.25);opacity:.85} 100%{transform:scale(1.8);opacity:0} }
+    @keyframes waterTouchDrop { 0%{opacity:.95;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.15)} }
+    @media(prefers-reduced-motion:reduce){.water-touch-ripple,.water-touch-ripple:before,.water-touch-ripple:after,.water-touch-drop{animation-duration:.01ms}}
+  `;
+  document.head.appendChild(css);
+
+  document.addEventListener('pointerdown', function(event) {
+    const panel = event.target && event.target.closest && event.target.closest('#login-panel');
+    if (!panel || panel.classList.contains('hide')) return;
+    const rect = panel.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const ripple = document.createElement('span');
+    ripple.className = 'water-touch-ripple';
+    ripple.style.left = x + 'px';
+    ripple.style.top = y + 'px';
+    panel.appendChild(ripple);
+
+    const directions = [[-17,-13],[16,-12],[-13,17],[18,13]];
+    directions.forEach(([dx,dy], index) => {
+      const drop = document.createElement('i');
+      drop.className = 'water-touch-drop';
+      drop.style.left = (x - 2 + (index % 2) * 4) + 'px';
+      drop.style.top = (y - 2 + Math.floor(index / 2) * 4) + 'px';
+      drop.style.setProperty('--dx', dx + 'px');
+      drop.style.setProperty('--dy', dy + 'px');
+      panel.appendChild(drop);
+      drop.addEventListener('animationend', () => drop.remove(), { once:true });
+    });
+    ripple.addEventListener('animationend', () => ripple.remove(), { once:true });
+  }, { passive:true });
+})();
