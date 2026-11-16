@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#153c4a"/><stop offset="1" stop-color="#071c29"/></linearGradient><linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8e6ad"/><stop offset="1" stop-color="#c49a4a"/></linearGradient></defs>
+<rect width="512" height="512" rx="112" fill="url(#g)"/>
+<path d="M256 55 444 164 444 348 256 457 68 348 68 164Z" fill="none" stroke="url(#gold)" stroke-width="13"/>
+<path d="M256 93 405 180 405 332 256 419 107 332 107 180Z" fill="none" stroke="#ffffff" stroke-opacity=".25" stroke-width="4"/>
+<path d="M164 177h184M256 177v164M164 177l92 164 92-164" fill="none" stroke="url(#gold)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="256" y="382" text-anchor="middle" font-family="Arial,sans-serif" font-size="39" font-weight="700" letter-spacing="5" fill="#fff">KANDY TILE</text>
+</svg>
