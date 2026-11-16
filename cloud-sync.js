@@ -632,8 +632,15 @@
     let bar=$('kandy-public-categories');
     if(!bar){bar=document.createElement('div');bar.id='kandy-public-categories';bar.className='kandy-category-bar';folderBar.after(bar);}
     bar.replaceChildren();
+    if(active==='All Collections'){
+      bar.replaceChildren();
+      $('grid').classList.add('hidden');
+      $('count').textContent='Select a collection to view product categories';
+      $('empty').classList.add('hide');
+      return;
+    }
     const cats=categoryList(active);
-    if(!cats.length){$('grid').classList.remove('hidden');return;}
+    if(!cats.length){$('grid').classList.add('hidden');$('count').textContent='No categories yet. Please add a category in Admin.';return;}
     const all=document.createElement('button');all.className='kandy-category-chip'+(!chosenCategory?' active':'');all.innerHTML='All categories<small>'+tiles.filter(t=>t.folder===active).length+' products</small>';all.onclick=()=>{chosenCategory='';view();};bar.append(all);
     cats.forEach(cat=>{
       const b=document.createElement('button');b.className='kandy-category-chip'+(chosenCategory===cat.name?' active':'');
