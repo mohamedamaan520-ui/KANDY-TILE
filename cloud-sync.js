@@ -7,7 +7,6 @@
   const BUCKET = 'catalog-photos';
   const client = window.supabase.createClient(URL, KEY);
   let isCloudAdmin = false, syncBusy = false, syncAgain = false, realtime = null;
-  let catalogCategories = [];
   const $ = id => document.getElementById(id);
   const msg = value => { const el = $('login-message'); if (el) el.textContent = value; };
   const friendly = e => e?.message || String(e || 'Unknown error');
@@ -86,21 +85,18 @@
   }
 
   async function loadCloudCatalogue() {
-    const [tileResult, folderResult, categoryResult] = await Promise.all([
+    const [tileResult, folderResult] = await Promise.all([
       client.from('catalog_tiles').select('*').order('sort_order'),
-      client.from('catalog_folders').select('*').order('sort_order'),
-      client.from('catalog_categories').select('*').order('sort_order')
+      client.from('catalog_folders').select('*').order('sort_order')
     ]);
     if (tileResult.error) throw tileResult.error;
     if (folderResult.error) throw folderResult.error;
-    if (categoryResult.error) throw categoryResult.error;
-    catalogCategories = categoryResult.data || [];
     const rows = tileResult.data || [];
     if (!rows.length) return false;
     tiles = rows.map(row => {
       const { data } = client.storage.from(BUCKET).getPublicUrl(row.image_path);
       return {
-        id: row.id, folder: row.folder, category: row.category || 'Tiles', number: row.tile_number,
+        id: row.id, folder: row.folder, number: row.tile_number,
         code: row.product_code, image: data.publicUrl, cloudPath: row.image_path
       };
     });
@@ -143,17 +139,12 @@
       const paths = new Map();
       for (const tile of tiles) paths.set(tile.id, await uploadTileImage(tile));
       const folderRows = folders.map((name, i) => ({ name, sort_order: i }));
-      const categoryRows = catalogCategories.map((item, i) => ({ collection: item.collection, name: item.name, sort_order: i }));
-      if (categoryRows.length) {
-        const { error } = await client.from('catalog_categories').upsert(categoryRows, { onConflict: 'collection,name' });
-        if (error) throw error;
-      }
       if (folderRows.length) {
         const { error } = await client.from('catalog_folders').upsert(folderRows, { onConflict: 'name' });
         if (error) throw error;
       }
       const tileRows = tiles.map((tile, i) => ({
-        id: tile.id, folder: tile.folder, category: tile.category || 'Tiles', tile_number: tile.number,
+        id: tile.id, folder: tile.folder, tile_number: tile.number,
         product_code: tile.code, image_path: paths.get(tile.id), sort_order: i
       }));
       if (tileRows.length) {
@@ -166,14 +157,6 @@
       const stale = (oldTiles || []).map(x => x.id).filter(id => !keep.has(id));
       if (stale.length) {
         const { error } = await client.from('catalog_tiles').delete().in('id', stale);
-        if (error) throw error;
-      }
-      const { data: oldCategories, error: categoryReadError } = await client.from('catalog_categories').select('collection,name');
-      if (categoryReadError) throw categoryReadError;
-      const keepCategories = new Set(catalogCategories.map(x => x.collection + '::' + x.name));
-      const staleCategories = (oldCategories || []).filter(x => !keepCategories.has(x.collection + '::' + x.name));
-      for (const item of staleCategories) {
-        const { error } = await client.from('catalog_categories').delete().eq('collection', item.collection).eq('name', item.name);
         if (error) throw error;
       }
       const { data: oldFolders, error: folderReadError } = await client.from('catalog_folders').select('name');
