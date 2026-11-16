@@ -200,7 +200,7 @@
   const originalSave = save;
   save = function() {
     const ok = originalSave();
-    if (ok && isCloudAdmin) syncCloudCatalogue();
+    if (isCloudAdmin) { syncCloudCatalogue(); return true; }
     return ok;
   };
 
