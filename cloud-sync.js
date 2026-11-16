@@ -885,12 +885,20 @@
     const response = await fetch(url);
     if (!response.ok) throw new Error('Image download failed');
     const blob = await response.blob();
-    return await new Promise((resolve,reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
+    const objectUrl = URL.createObjectURL(blob);
+    try {
+      const image = new Image();
+      image.src = objectUrl;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d');
+      context.drawImage(image,0,0);
+      return canvas.toDataURL('image/jpeg',0.9);
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
   }
   async function createCataloguePdf() {
     const chosen = document.getElementById('ks-folder').value;
