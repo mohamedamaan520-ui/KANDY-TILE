@@ -231,6 +231,8 @@
   client.auth.getSession().then(({ data }) => {
     if (data.session) activateAdmin(data.session).catch(e => msg(friendly(e)));
   });
+  // Public visitors receive live catalogue changes from other devices.
+  subscribeRealtime();
   // Public visitors always read the shared cloud catalogue when it has been seeded.
   loadCloudCatalogue().catch(err => console.warn('Cloud catalogue not loaded; showing built-in catalogue:', err));
 })();
