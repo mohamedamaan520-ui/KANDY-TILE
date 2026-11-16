@@ -1053,3 +1053,78 @@
   }
   document.getElementById('ks-create').addEventListener('click',createCataloguePdf);
 })();
+
+
+// KANDY TILE public hero slideshow: rotate catalogue photos every 8 seconds.
+(function kandyTopPhotoSlideshow() {
+  if (window.__kandyTopPhotoSlideshowV1) return;
+  window.__kandyTopPhotoSlideshowV1 = true;
+  let timer = null, current = 0, hero = null, originalSrc = '';
+  const style = document.createElement('style');
+  style.id = 'kandy-top-slideshow-style';
+  style.textContent = `
+    .kandy-top-slide-image { transition: opacity .65s ease-in-out !important; }
+    .kandy-top-slide-image.kandy-slide-fade { opacity: .12 !important; }
+  `;
+  document.head.appendChild(style);
+
+  function publicPage() {
+    const login = document.getElementById('login-panel');
+    const dashboard = document.getElementById('dashboard');
+    const shown = el => el && !el.classList.contains('hide') && getComputedStyle(el).display !== 'none';
+    return !(shown(login) || shown(dashboard));
+  }
+  function chooseHero() {
+    const candidates = [...document.querySelectorAll('img')].filter(img => {
+      if (!img.complete || !img.naturalWidth) return false;
+      const r = img.getBoundingClientRect();
+      const cs = getComputedStyle(img);
+      return r.top >= -80 && r.top < 750 && r.width >= 250 && r.height >= 110 &&
+        cs.display !== 'none' && cs.visibility !== 'hidden' &&
+        !img.closest('#dashboard,#login-panel,#kandy-share-modal,#kandy-tile-format-modal');
+    }).sort((a,b) => {
+      const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();
+      return ar.top-br.top || br.width*br.height-ar.width*ar.height;
+    });
+    return candidates[0] || null;
+  }
+  function cataloguePhotos() {
+    if (!Array.isArray(window.tiles)) return [];
+    return window.tiles.filter(t => t && typeof t.image === 'string' && /^https?:|^data:image\//i.test(t.image));
+  }
+  function start() {
+    if (!publicPage()) { if (timer) clearInterval(timer); timer=null; return; }
+    const photos = cataloguePhotos();
+    if (photos.length < 2) return;
+    if (!hero || !hero.isConnected) {
+      hero = chooseHero();
+      if (!hero) return;
+      originalSrc = hero.currentSrc || hero.src || '';
+      hero.classList.add('kandy-top-slide-image');
+      current = Math.max(0, photos.findIndex(t => t.image === originalSrc));
+    }
+    if (timer) return;
+    timer = setInterval(() => {
+      if (!publicPage() || !hero || !hero.isConnected) {
+        clearInterval(timer); timer=null; hero=null; return;
+      }
+      const latest = cataloguePhotos();
+      if (latest.length < 2) return;
+      current = (current + 1) % latest.length;
+      hero.classList.add('kandy-slide-fade');
+      setTimeout(() => {
+        if (!hero || !hero.isConnected) return;
+        hero.src = latest[current].image;
+        hero.removeAttribute('srcset');
+        hero.alt = [latest[current].number, latest[current].code].filter(Boolean).join(' - ') || 'KANDY TILE design';
+        const reveal = () => hero && hero.classList.remove('kandy-slide-fade');
+        hero.addEventListener('load', reveal, {once:true});
+        setTimeout(reveal, 900);
+      }, 320);
+    }, 8000);
+  }
+  const boot = () => { if (publicPage()) start(); };
+  document.addEventListener('DOMContentLoaded', boot);
+  setInterval(boot, 1500);
+  new MutationObserver(() => { if (!timer) boot(); }).observe(document.body,{childList:true,subtree:true});
+})();
