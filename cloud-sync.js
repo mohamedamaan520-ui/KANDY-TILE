@@ -736,6 +736,24 @@
       box-shadow:0 22px 70px rgba(0,0,0,.45);
     }
     #kandy-share-modal h2 {margin:0 0 8px;color:#f4fcff}
+    #kandy-tile-format-modal {
+      position:fixed;inset:0;z-index:100001;background:rgba(2,12,23,.78);
+      display:none;align-items:center;justify-content:center;padding:16px;
+      -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    }
+    #kandy-tile-format-modal .ks-card {
+      width:min(380px,100%);padding:22px;border:1px solid rgba(169,231,247,.42);
+      border-radius:20px;color:#eafaff;background:linear-gradient(145deg,#102f43,#071b2c);
+      box-shadow:0 22px 70px rgba(0,0,0,.45);
+    }
+    #kandy-tile-format-modal h2 {margin:0 0 8px;color:#f4fcff}
+    #kandy-tile-format-modal p {color:#c4e1eb}
+    #kandy-tile-format-modal button {
+      box-sizing:border-box;width:100%;padding:13px;margin-top:10px;border-radius:11px;
+      border:1px solid rgba(170,235,250,.38);color:#f2fbff;background:#12364b;font-size:15px;
+    }
+    #kandy-tile-format-modal button.primary {background:linear-gradient(135deg,#0799b5,#176ba2);font-weight:700}
+
     #kandy-share-modal p {color:#c4e1eb}
     #kandy-share-modal select,#kandy-share-modal button {
       box-sizing:border-box;width:100%;padding:12px;margin-top:10px;
@@ -776,6 +794,19 @@
     </div>`;
   document.body.appendChild(modal);
 
+  const tileFormatModal = document.createElement('div');
+  tileFormatModal.id = 'kandy-tile-format-modal';
+  tileFormatModal.innerHTML = `
+    <div class="ks-card" role="dialog" aria-modal="true" aria-labelledby="kst-title">
+      <h2 id="kst-title">Share This Tile</h2>
+      <p>Choose the file format to share on WhatsApp or another app.</p>
+      <button id="kst-jpg" class="primary" type="button">Share as JPG Photo</button>
+      <button id="kst-pdf" type="button">Share as PDF</button>
+      <button id="kst-close" type="button">Close</button>
+      <p id="kst-status" aria-live="polite"></p>
+    </div>`;
+  document.body.appendChild(tileFormatModal);
+
   const status = text => { const el = document.getElementById('kandy-share-status'); if (el) el.textContent = text || ''; };
   const adminVisible = () => {
     const login = document.getElementById('login-panel');
@@ -786,7 +817,7 @@
   function publicMode() {
     const active = !adminVisible();
     catalogueBtn.style.display = active ? 'block' : 'none';
-    if (!active) { tileBtn.style.display = 'none'; modal.style.display = 'none'; }
+    if (!active) { tileBtn.style.display = 'none'; modal.style.display = 'none'; tileFormatModal.style.display = 'none'; }
   }
   new MutationObserver(publicMode).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
   publicMode();
@@ -846,28 +877,67 @@
     const ext = type.includes('png') ? 'png' : type.includes('webp') ? 'webp' : 'jpg';
     return new File([blob], name + '.' + ext, {type});
   }
-  async function shareTile() {
+  function showTileFormatOptions() {
+    if (!selectedTile) return;
+    document.getElementById('kst-status').textContent = '';
+    tileFormatModal.style.display = 'flex';
+  }
+  async function shareTileAs(format) {
     if (!selectedTile) return;
     const tile = selectedTile;
-    const details = 'KANDY TILE' + (tileDetails(tile) ? '\\n' + tileDetails(tile) : '');
+    const details = 'KANDY TILE\\n' + tileDetails(tile);
+    const baseName = 'KANDY-TILE-' + (tile.number || tile.code || 'Product');
+    const jpgButton = document.getElementById('kst-jpg');
+    const pdfButton = document.getElementById('kst-pdf');
+    jpgButton.disabled = pdfButton.disabled = true;
+    document.getElementById('kst-status').textContent = 'Preparing ' + format.toUpperCase() + '...';
     try {
-      const file = await imageFile(tile.image, 'KANDY-TILE-' + (tile.number || 'Product'));
-      if (navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))) {
-        await navigator.share({title:'KANDY TILE',text:details,files:[file]});
+      let file;
+      if (format === 'jpg') {
+        const data = await imageData(tile.image);
+        const response = await fetch(data);
+        const blob = await response.blob();
+        file = new File([blob],baseName+'.jpg',{type:'image/jpeg'});
       } else {
+        await loadPdfLibrary();
+        const {jsPDF} = window.jspdf;
+        const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+        pdf.setFillColor(7,31,48); pdf.rect(0,0,210,297,'F');
+        pdf.setTextColor(235,249,255); pdf.setFontSize(23); pdf.text('KANDY TILE',14,22);
+        pdf.setFontSize(12); pdf.setTextColor(174,216,230); pdf.text('REFLECT YOUR DREAM',14,31);
+        const data = await imageData(tile.image);
+        pdf.addImage(data,'JPEG',14,45,182,150,undefined,'FAST');
+        pdf.setTextColor(238,250,255); pdf.setFontSize(13);
+        const lines = tileDetails(tile).split(' | ');
+        lines.forEach((line,i) => pdf.text(line,14,215+i*11));
+        pdf.setTextColor(174,216,230); pdf.setFontSize(10);
+        pdf.text('KANDY TILE Catalogue',14,270);
+        file = new File([pdf.output('blob')],baseName+'.pdf',{type:'application/pdf'});
+      }
+      if (navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))) {
+        await navigator.share({title:'KANDY TILE - '+(tile.number || 'Product'),text:details,files:[file]});
+        document.getElementById('kst-status').textContent = 'Share completed.';
+      } else {
+        const objectUrl = URL.createObjectURL(file);
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(file); link.download = file.name; link.click();
-        URL.revokeObjectURL(link.href);
-        if (navigator.share) await navigator.share({title:'KANDY TILE',text:details});
-        else { await navigator.clipboard?.writeText(details); alert('Photo downloaded. Product details copied. Share the downloaded photo.'); }
+        link.href = objectUrl; link.download = file.name; link.click();
+        setTimeout(() => URL.revokeObjectURL(objectUrl),1500);
+        document.getElementById('kst-status').textContent = file.name+' downloaded. Attach it in WhatsApp.';
       }
     } catch (err) {
-      if (err && err.name === 'AbortError') return;
-      alert('Could not share this photo. Please try again or download the photo from the catalogue.');
-      console.error('KANDY TILE single photo share:',err);
-    }
+      if (err && err.name === 'AbortError') document.getElementById('kst-status').textContent = 'Sharing cancelled.';
+      else {
+        document.getElementById('kst-status').textContent = 'Could not prepare the file. Please try again.';
+        console.error('KANDY TILE tile share:',err);
+      }
+    } finally { jpgButton.disabled = pdfButton.disabled = false; }
   }
-  tileBtn.addEventListener('click', shareTile);
+  tileBtn.addEventListener('click', showTileFormatOptions);
+  document.getElementById('kst-jpg').addEventListener('click',() => shareTileAs('jpg'));
+  document.getElementById('kst-pdf').addEventListener('click',() => shareTileAs('pdf'));
+  document.getElementById('kst-close').addEventListener('click',() => tileFormatModal.style.display='none');
+  tileFormatModal.addEventListener('click',e => { if(e.target===tileFormatModal) tileFormatModal.style.display='none'; });
+
 
   function loadPdfLibrary() {
     if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
