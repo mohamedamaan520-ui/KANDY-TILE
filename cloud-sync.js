@@ -77,9 +77,8 @@
     const notice = $('dashboard').querySelector('.admin-panel .notice');
     if (notice) notice.textContent = 'Cloud connected. Changes are shared across phones and computers after saving.';
     msg('Signed in successfully.');
-    await loadCloudCatalogue();
-    if (tiles.length === 0) $('cloud-seed').style.display = 'inline-block';
-    else $('cloud-seed').style.display = 'none';
+    const cloudHasCatalogue = await loadCloudCatalogue();
+    $('cloud-seed').style.display = cloudHasCatalogue ? 'none' : 'inline-block';
     if (typeof renderAdmin === 'function') renderAdmin();
     if (typeof view === 'function') view();
     subscribeRealtime();
