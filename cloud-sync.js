@@ -604,8 +604,17 @@
     function fill(preferred){const cats=categoryList($('edit-folder').value);select.innerHTML=cats.map(c=>'<option value="'+c.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+c.name+'</option>').join('');if(preferred&&cats.some(c=>c.name===preferred))select.value=preferred;}
     $('edit-folder').addEventListener('change',()=>fill('Tiles'));
     fill('Tiles');
-    const oldSubmit=form.onsubmit;
-    form.addEventListener('submit',()=>{const item=tiles.find(t=>t.id===editing);if(item)item.category=select.value;});
+    // Capture before the original submit handler saves the product.
+    if(!form.__kandyCategorySubmit){
+      form.__kandyCategorySubmit=true;
+      form.addEventListener('submit',()=>{
+        const item=tiles.find(t=>t.id===editing);
+        if(item)item.category=select.value;
+        const push=tiles.push.bind(tiles);
+        tiles.push=(...items)=>push(...items.map(item=>({...item,category:select.value||'Tiles'})));
+        setTimeout(()=>{tiles.push=push;},0);
+      },true);
+    }
     const editButtons=$('admin-list');
     if(editButtons&&!editButtons.__categoryHook){
       editButtons.__categoryHook=true;
