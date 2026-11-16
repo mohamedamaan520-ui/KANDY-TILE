@@ -238,4 +238,82 @@
   subscribeRealtime();
   // Public visitors always read the shared cloud catalogue when it has been seeded.
   loadCloudCatalogue().catch(err => console.warn('Cloud catalogue not loaded; showing built-in catalogue:', err));
+
+  // Water-glass styling is intentionally scoped to the Admin Login panel.
+  (function applyWaterGlassLogin() {
+    const panel = document.getElementById('login-panel');
+    if (!panel || document.getElementById('water-glass-login-style')) return;
+    document.body.classList.add('water-glass-login-active');
+    const style = document.createElement('style');
+    style.id = 'water-glass-login-style';
+    style.textContent = `
+      body.water-glass-login-active {
+        background:
+          radial-gradient(ellipse at 15% 15%, rgba(105,225,255,.35), transparent 38%),
+          radial-gradient(ellipse at 85% 80%, rgba(25,126,210,.30), transparent 42%),
+          linear-gradient(135deg,#061b32 0%,#0a4262 48%,#06182e 100%) !important;
+        background-attachment: fixed !important;
+      }
+      body.water-glass-login-active #login-panel {
+        position:relative; isolation:isolate; overflow:hidden;
+        background:linear-gradient(135deg,rgba(255,255,255,.24),rgba(190,240,255,.08)) !important;
+        border:1px solid rgba(226,250,255,.48) !important;
+        border-radius:28px !important;
+        box-shadow:0 24px 70px rgba(0,10,30,.42),inset 0 1px 1px rgba(255,255,255,.65),inset 0 -1px 1px rgba(255,255,255,.12) !important;
+        -webkit-backdrop-filter:blur(24px) saturate(165%);
+        backdrop-filter:blur(24px) saturate(165%);
+      }
+      body.water-glass-login-active #login-panel:after {
+        content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+        background:linear-gradient(118deg,rgba(255,255,255,.25),transparent 34%,transparent 68%,rgba(130,226,255,.13));
+        border-radius:inherit;
+      }
+      body.water-glass-login-active #login-panel > :not(.water-bubble) { position:relative; z-index:2; }
+      body.water-glass-login-active #login-panel input {
+        color:#f5fcff !important; background:rgba(4,34,57,.34) !important;
+        border:1px solid rgba(225,249,255,.38) !important; border-radius:13px !important;
+        box-shadow:inset 0 2px 8px rgba(0,12,28,.18),0 1px 0 rgba(255,255,255,.12) !important;
+        outline:none;
+      }
+      body.water-glass-login-active #login-panel input::placeholder { color:rgba(240,251,255,.72) !important; }
+      body.water-glass-login-active #login-panel button {
+        border:1px solid rgba(232,251,255,.5) !important; border-radius:14px !important;
+        box-shadow:0 8px 20px rgba(0,18,40,.24),inset 0 1px 0 rgba(255,255,255,.4) !important;
+        transition:transform .2s ease,filter .2s ease,box-shadow .2s ease;
+      }
+      body.water-glass-login-active #login-panel button:hover {
+        transform:translateY(-2px); filter:brightness(1.12);
+        box-shadow:0 12px 26px rgba(0,18,40,.32),inset 0 1px 0 rgba(255,255,255,.5) !important;
+      }
+      body.water-glass-login-active #login-panel .notice,
+      body.water-glass-login-active #login-message { color:#e7f8ff !important; }
+      .water-bubble { position:absolute; z-index:0 !important; pointer-events:none; border-radius:50%;
+        border:1px solid rgba(231,250,255,.58);
+        background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.72),rgba(164,231,255,.18) 34%,rgba(45,157,218,.08) 68%,rgba(255,255,255,.22));
+        box-shadow:inset -7px -9px 18px rgba(13,95,148,.18),inset 4px 5px 12px rgba(255,255,255,.4),0 8px 24px rgba(0,20,50,.16);
+        animation:waterBubbleFloat 8s ease-in-out infinite;
+      }
+      .water-bubble:nth-of-type(1){width:68px;height:68px;left:7%;top:12%;animation-delay:-2s}
+      .water-bubble:nth-of-type(2){width:26px;height:26px;right:13%;top:18%;animation-delay:-5s}
+      .water-bubble:nth-of-type(3){width:44px;height:44px;right:7%;bottom:14%;animation-delay:-1s}
+      .water-bubble:nth-of-type(4){width:19px;height:19px;left:19%;bottom:12%;animation-delay:-4s}
+      .water-bubble:nth-of-type(5){width:13px;height:13px;left:50%;top:7%;animation-delay:-3s}
+      @keyframes waterBubbleFloat { 0%,100%{transform:translate3d(0,0,0)} 50%{transform:translate3d(9px,-16px,0)} }
+      @media(prefers-reduced-motion:reduce){.water-bubble{animation:none} body.water-glass-login-active #login-panel button{transition:none}}
+      @media(max-width:600px){body.water-glass-login-active #login-panel{border-radius:22px !important;margin:14px !important}}
+    `;
+    document.head.appendChild(style);
+    for (let i = 0; i < 5; i++) {
+      const bubble = document.createElement('span');
+      bubble.className = 'water-bubble';
+      bubble.setAttribute('aria-hidden', 'true');
+      panel.prepend(bubble);
+    }
+    const observer = new MutationObserver(() => {
+      const loginVisible = !panel.classList.contains('hide');
+      document.body.classList.toggle('water-glass-login-active', loginVisible);
+    });
+    observer.observe(panel, { attributes:true, attributeFilter:['class'] });
+  })();
+
 })();
