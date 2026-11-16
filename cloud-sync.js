@@ -379,3 +379,146 @@
     ripple.addEventListener('animationend', () => ripple.remove(), { once:true });
   }, { passive:true });
 })();
+
+
+// KANDY TILE Admin Dashboard refresh: product wording, folder open shortcuts and liquid-glass UI.
+(function enhanceKandyAdminDashboard() {
+  if (window.__kandyAdminDashboardV2) return;
+  window.__kandyAdminDashboardV2 = true;
+
+  const css = document.createElement('style');
+  css.id = 'kandy-admin-dashboard-v2-style';
+  css.textContent = `
+    body.kandy-admin-water {
+      background:
+        radial-gradient(ellipse at 12% 8%,rgba(91,213,255,.24),transparent 34%),
+        radial-gradient(ellipse at 88% 88%,rgba(25,116,191,.22),transparent 38%),
+        linear-gradient(135deg,#061b32,#0b3d5b 52%,#07182c) fixed !important;
+      background-attachment:fixed !important;
+    }
+    body.kandy-admin-water #dashboard { color:#f2fbff; }
+    body.kandy-admin-water #dashboard .admin-panel {
+      position:relative; isolation:isolate; overflow:hidden;
+      background:linear-gradient(135deg,rgba(255,255,255,.19),rgba(191,238,255,.075)) !important;
+      border:1px solid rgba(224,249,255,.30) !important;
+      border-radius:22px !important;
+      box-shadow:0 16px 42px rgba(0,10,28,.27),inset 0 1px 0 rgba(255,255,255,.28) !important;
+      -webkit-backdrop-filter:blur(20px) saturate(155%);
+      backdrop-filter:blur(20px) saturate(155%);
+    }
+    body.kandy-admin-water #dashboard .admin-panel h2,
+    body.kandy-admin-water #dashboard .admin-panel h3,
+    body.kandy-admin-water #dashboard .admin-panel strong { color:#f4fcff !important; }
+    body.kandy-admin-water #dashboard .notice { color:rgba(234,249,255,.78) !important; }
+    body.kandy-admin-water #dashboard input,
+    body.kandy-admin-water #dashboard select {
+      color:#f5fcff !important;background:rgba(2,28,49,.43) !important;
+      border:1px solid rgba(221,247,255,.32) !important;border-radius:12px !important;
+    }
+    body.kandy-admin-water #dashboard select option { color:#102334;background:#fff; }
+    body.kandy-admin-water #dashboard input::placeholder { color:rgba(235,249,255,.65) !important; }
+    body.kandy-admin-water #dashboard button {
+      color:#f5fcff;background:rgba(222,247,255,.13);
+      border:1px solid rgba(228,250,255,.34);border-radius:12px;
+      box-shadow:0 5px 16px rgba(0,10,30,.18),inset 0 1px 0 rgba(255,255,255,.18);
+      transition:transform .2s ease,background .2s ease,box-shadow .2s ease;
+    }
+    body.kandy-admin-water #dashboard button:hover {
+      transform:translateY(-2px);background:rgba(183,235,255,.24);
+      box-shadow:0 9px 22px rgba(0,10,30,.28),inset 0 1px 0 rgba(255,255,255,.3);
+    }
+    body.kandy-admin-water #dashboard button.primary {
+      background:linear-gradient(135deg,#16a8d4,#1769a5) !important;
+      border-color:rgba(226,250,255,.55) !important;
+    }
+    body.kandy-admin-water #folder-manager .admin-row {
+      padding:10px 12px;margin:8px 0;border:1px solid rgba(220,247,255,.18);
+      border-radius:15px;background:rgba(3,31,52,.22);gap:9px;
+    }
+    body.kandy-admin-water #folder-manager .admin-row strong { flex:1; }
+    body.kandy-admin-water #admin-list .admin-item {
+      background:rgba(2,29,50,.34) !important;border:1px solid rgba(222,247,255,.22) !important;
+      border-radius:17px !important;padding:12px !important;
+      box-shadow:0 8px 24px rgba(0,10,28,.18) !important;
+    }
+    body.kandy-admin-water #admin-list .admin-item img {
+      border-radius:12px !important;border:1px solid rgba(232,250,255,.25);
+    }
+    body.kandy-admin-water #dashboard button.kandy-open-folder {
+      background:linear-gradient(135deg,rgba(34,185,218,.42),rgba(34,112,177,.34));
+    }
+    @media(max-width:700px) {
+      body.kandy-admin-water #dashboard .admin-panel { padding:15px !important;border-radius:18px !important; }
+      body.kandy-admin-water #folder-manager .admin-row { flex-wrap:wrap; }
+      body.kandy-admin-water #folder-manager .admin-row strong { flex-basis:100%; }
+      body.kandy-admin-water #admin-list .admin-item { min-width:0; }
+    }
+    @media(prefers-reduced-motion:reduce) {
+      body.kandy-admin-water #dashboard button { transition:none; }
+    }
+  `;
+  document.head.appendChild(css);
+
+  function refreshAdminDesign() {
+    const dashboard = document.getElementById('dashboard');
+    const admin = document.getElementById('admin');
+    const active = dashboard && !dashboard.classList.contains('hide') && admin && !admin.classList.contains('hide');
+    document.body.classList.toggle('kandy-admin-water', !!active);
+    if (!dashboard) return;
+
+    dashboard.querySelectorAll('h3').forEach(h => {
+      const value = h.textContent.trim().toLowerCase();
+      if (value.startsWith('manage tile photos')) h.childNodes[0].textContent = 'Manage Products ';
+      if (value === 'add tile photo') h.textContent = 'Add Product Photo & Information';
+    });
+
+    const editorTitle = document.getElementById('editor-title');
+    const saveButton = document.getElementById('save-tile');
+    if (editorTitle && editorTitle.textContent.toLowerCase().includes('tile photo')) {
+      editorTitle.textContent = editorTitle.textContent.toLowerCase().includes('edit')
+        ? 'Edit Product Information' : 'Add Product Photo & Information';
+    }
+    if (saveButton && saveButton.textContent.trim() === 'Add tile') saveButton.textContent = 'Add Product';
+    const folderSelect = document.getElementById('edit-folder');
+    if (folderSelect) folderSelect.setAttribute('aria-label','Product folder');
+    const numberInput = document.getElementById('edit-number');
+    if (numberInput) numberInput.placeholder = 'Product number';
+    const codeInput = document.getElementById('edit-code');
+    if (codeInput) codeInput.placeholder = 'Item code';
+    const photoInput = document.getElementById('edit-photo');
+    if (photoInput) photoInput.setAttribute('aria-label','Product image');
+
+    const manager = document.getElementById('folder-manager');
+    if (manager) manager.querySelectorAll('.admin-row').forEach(row => {
+      if (row.querySelector('.kandy-open-folder')) return;
+      const label = row.querySelector('strong');
+      if (!label) return;
+      const folderName = label.textContent.replace(/\\s*\\(\\d+\\)\\s*$/,'').trim();
+      const open = document.createElement('button');
+      open.type = 'button';
+      open.className = 'kandy-open-folder';
+      open.textContent = 'Open products';
+      open.addEventListener('click', () => {
+        const filter = document.getElementById('admin-filter');
+        if (filter) {
+          filter.value = folderName;
+          filter.dispatchEvent(new Event('change',{bubbles:true}));
+        }
+        const list = document.getElementById('admin-list');
+        if (list) list.scrollIntoView({behavior:'smooth',block:'start'});
+      });
+      row.append(open);
+    });
+  }
+
+  const target = document.getElementById('dashboard') || document.body;
+  const observer = new MutationObserver(() => refreshAdminDesign());
+  observer.observe(target,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+  document.addEventListener('click', event => {
+    if (event.target && event.target.closest && event.target.closest('#dashboard')) {
+      setTimeout(refreshAdminDesign,0);
+    }
+  });
+  refreshAdminDesign();
+  setTimeout(refreshAdminDesign,300);
+})();
