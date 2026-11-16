@@ -7,6 +7,7 @@
   const BUCKET = 'catalog-photos';
   const client = window.supabase.createClient(URL, KEY);
   let isCloudAdmin = false, syncBusy = false, syncAgain = false, realtime = null;
+  let catalogCategories = [];
   const $ = id => document.getElementById(id);
   const msg = value => { const el = $('login-message'); if (el) el.textContent = value; };
   const friendly = e => e?.message || String(e || 'Unknown error');
@@ -85,18 +86,21 @@
   }
 
   async function loadCloudCatalogue() {
-    const [tileResult, folderResult] = await Promise.all([
+    const [tileResult, folderResult, categoryResult] = await Promise.all([
       client.from('catalog_tiles').select('*').order('sort_order'),
-      client.from('catalog_folders').select('*').order('sort_order')
+      client.from('catalog_folders').select('*').order('sort_order'),
+      client.from('catalog_categories').select('*').order('sort_order')
     ]);
     if (tileResult.error) throw tileResult.error;
     if (folderResult.error) throw folderResult.error;
+    if (categoryResult.error) throw categoryResult.error;
+    catalogCategories = categoryResult.data || [];
     const rows = tileResult.data || [];
     if (!rows.length) return false;
     tiles = rows.map(row => {
       const { data } = client.storage.from(BUCKET).getPublicUrl(row.image_path);
       return {
-        id: row.id, folder: row.folder, number: row.tile_number,
+        id: row.id, folder: row.folder, category: row.category || 'Tiles', number: row.tile_number,
         code: row.product_code, image: data.publicUrl, cloudPath: row.image_path
       };
     });
@@ -139,12 +143,17 @@
       const paths = new Map();
       for (const tile of tiles) paths.set(tile.id, await uploadTileImage(tile));
       const folderRows = folders.map((name, i) => ({ name, sort_order: i }));
+      const categoryRows = catalogCategories.map((item, i) => ({ collection: item.collection, name: item.name, sort_order: i }));
+      if (categoryRows.length) {
+        const { error } = await client.from('catalog_categories').upsert(categoryRows, { onConflict: 'collection,name' });
+        if (error) throw error;
+      }
       if (folderRows.length) {
         const { error } = await client.from('catalog_folders').upsert(folderRows, { onConflict: 'name' });
         if (error) throw error;
       }
       const tileRows = tiles.map((tile, i) => ({
-        id: tile.id, folder: tile.folder, tile_number: tile.number,
+        id: tile.id, folder: tile.folder, category: tile.category || 'Tiles', tile_number: tile.number,
         product_code: tile.code, image_path: paths.get(tile.id), sort_order: i
       }));
       if (tileRows.length) {
@@ -157,6 +166,14 @@
       const stale = (oldTiles || []).map(x => x.id).filter(id => !keep.has(id));
       if (stale.length) {
         const { error } = await client.from('catalog_tiles').delete().in('id', stale);
+        if (error) throw error;
+      }
+      const { data: oldCategories, error: categoryReadError } = await client.from('catalog_categories').select('collection,name');
+      if (categoryReadError) throw categoryReadError;
+      const keepCategories = new Set(catalogCategories.map(x => x.collection + '::' + x.name));
+      const staleCategories = (oldCategories || []).filter(x => !keepCategories.has(x.collection + '::' + x.name));
+      for (const item of staleCategories) {
+        const { error } = await client.from('catalog_categories').delete().eq('collection', item.collection).eq('name', item.name);
         if (error) throw error;
       }
       const { data: oldFolders, error: folderReadError } = await client.from('catalog_folders').select('name');
@@ -521,4 +538,110 @@
   });
   refreshAdminDesign();
   setTimeout(refreshAdminDesign,300);
+})();
+
+
+// KANDY TILE nested Collection -> Category -> Products navigation and category manager.
+(function kandyNestedCatalogue(){
+  if(window.__kandyNestedCatalogueV1)return;
+  window.__kandyNestedCatalogueV1=true;
+  const $=id=>document.getElementById(id);
+  let chosenCategory='';
+  const style=document.createElement('style');
+  style.textContent=`
+    .kandy-category-bar{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 22px}
+    .kandy-category-chip{border:1px solid #d6e8f1;background:#fff;color:#16415a;border-radius:14px;padding:13px 18px;font-weight:800;box-shadow:0 5px 18px #06304a12}
+    .kandy-category-chip.active{background:linear-gradient(135deg,#087fa9,#155b91);color:#fff}
+    .kandy-category-chip small{display:block;font-weight:500;opacity:.78;margin-top:4px}
+    .kandy-category-admin{border:1px solid rgba(222,247,255,.22);border-radius:16px;padding:15px;margin:12px 0;background:rgba(3,31,52,.2)}
+    .kandy-category-admin .admin-row{align-items:center}
+    .kandy-category-admin strong{flex:1}
+  `;
+  document.head.appendChild(style);
+  function ensureCategories(){
+    if(!Array.isArray(catalogCategories))catalogCategories=[];
+    folders.forEach(collection=>{
+      if(!catalogCategories.some(x=>x.collection===collection))catalogCategories.push({collection,name:'Tiles',sort_order:0});
+    });
+    tiles.forEach(t=>{if(!t.category)t.category='Tiles'});
+  }
+  function categoryList(collection){return catalogCategories.filter(x=>x.collection===collection).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));}
+  function renderCategoryManager(){
+    const dash=$('dashboard');if(!dash||dash.classList.contains('hide'))return;
+    let panel=$('kandy-category-manager');
+    if(!panel){
+      panel=document.createElement('section');panel.id='kandy-category-manager';panel.className='admin-panel';
+      const folderPanel=$('folder-manager')?.closest('.admin-panel');
+      if(folderPanel)folderPanel.after(panel);else dash.prepend(panel);
+    }
+    panel.innerHTML='<h3>Manage Product Categories</h3><p class="notice">Create categories inside each collection, such as Tiles, Washbasins and other products.</p><div class="admin-row"><select id="kandy-category-collection" aria-label="Collection"></select><input id="kandy-new-category" placeholder="New category name"><button class="primary" id="kandy-add-category" type="button">Add Category</button></div><div id="kandy-category-rows"></div>';
+    const collection=$('kandy-category-collection');
+    collection.innerHTML=folders.map(f=>'<option value="'+String(f).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+f+'</option>').join('');
+    const rows=$('kandy-category-rows');
+    function list(){
+      rows.replaceChildren();
+      categoryList(collection.value).forEach(cat=>{
+        const row=document.createElement('div');row.className='admin-row kandy-category-admin';
+        const label=document.createElement('strong');label.textContent=cat.name+' ('+tiles.filter(t=>t.folder===cat.collection&&t.category===cat.name).length+' products)';
+        const rename=document.createElement('button');rename.type='button';rename.textContent='Rename';
+        rename.onclick=()=>{const next=prompt('Rename category:',cat.name)?.trim();if(!next||next===cat.name)return;if(categoryList(cat.collection).some(x=>x.name===next))return alert('Category already exists.');const old=cat.name;cat.name=next;tiles.forEach(t=>{if(t.folder===cat.collection&&t.category===old)t.category=next});chosenCategory=next;save();renderCategoryManager();view();};
+        const del=document.createElement('button');del.type='button';del.textContent='Delete';
+        del.onclick=()=>{if(tiles.some(t=>t.folder===cat.collection&&t.category===cat.name))return alert('Move or delete the products in this category first.');if(!confirm('Delete category '+cat.name+'?'))return;catalogCategories=catalogCategories.filter(x=>!(x.collection===cat.collection&&x.name===cat.name));if(chosenCategory===cat.name)chosenCategory='';save();renderCategoryManager();view();};
+        row.append(label,rename,del);rows.append(row);
+      });
+    }
+    collection.onchange=list;
+    $('kandy-add-category').onclick=()=>{const name=$('kandy-new-category').value.trim();if(!name)return alert('Enter a category name.');if(categoryList(collection.value).some(x=>x.name.toLowerCase()===name.toLowerCase()))return alert('Category already exists.');catalogCategories.push({collection:collection.value,name,sort_order:categoryList(collection.value).length});$('kandy-new-category').value='';save();list();view();};
+    list();
+  }
+  function addCategoryField(){
+    const form=$('tile-form');if(!form||$('edit-category'))return;
+    const row=document.createElement('div');row.className='admin-row';
+    const select=document.createElement('select');select.id='edit-category';select.required=true;select.setAttribute('aria-label','Product category');
+    const hint=document.createElement('span');hint.className='notice';hint.textContent='Choose the category inside the selected collection.';
+    row.append(select,hint);const folder=$('edit-folder')?.closest('.admin-row');
+    if(folder)folder.after(row);else form.prepend(row);
+    function fill(preferred){const cats=categoryList($('edit-folder').value);select.innerHTML=cats.map(c=>'<option value="'+c.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+c.name+'</option>').join('');if(preferred&&cats.some(c=>c.name===preferred))select.value=preferred;}
+    $('edit-folder').addEventListener('change',()=>fill('Tiles'));
+    fill('Tiles');
+    const oldSubmit=form.onsubmit;
+    form.addEventListener('submit',()=>{const item=tiles.find(t=>t.id===editing);if(item)item.category=select.value;});
+    const editButtons=$('admin-list');
+    if(editButtons&&!editButtons.__categoryHook){
+      editButtons.__categoryHook=true;
+      new MutationObserver(()=>{editButtons.querySelectorAll('.admin-item button').forEach(btn=>{if(btn.textContent==='Edit'&&!btn.__catHook){btn.__catHook=true;btn.addEventListener('click',()=>{const card=btn.closest('.admin-item');const text=card?.querySelector('div')?.textContent||'';const product=tiles.find(t=>text.includes(t.number)&&text.includes(t.code));setTimeout(()=>{if(product)fill(product.category||'Tiles');},0);});}})}).observe(editButtons,{childList:true,subtree:true});
+    }
+    void oldSubmit;
+  }
+  const oldRenderAdmin=renderAdmin;
+  renderAdmin=function(){ensureCategories();oldRenderAdmin();renderCategoryManager();addCategoryField();};
+  const oldSave=save;
+  save=function(){ensureCategories();return oldSave();};
+  const oldView=view;
+  view=function(){
+    ensureCategories();
+    oldView();
+    const folderBar=$('folders');if(!folderBar)return;
+    let bar=$('kandy-public-categories');
+    if(!bar){bar=document.createElement('div');bar.id='kandy-public-categories';bar.className='kandy-category-bar';folderBar.after(bar);}
+    bar.replaceChildren();
+    const cats=categoryList(active);
+    if(!cats.length){$('grid').classList.remove('hidden');return;}
+    const all=document.createElement('button');all.className='kandy-category-chip'+(!chosenCategory?' active':'');all.innerHTML='All categories<small>'+tiles.filter(t=>t.folder===active).length+' products</small>';all.onclick=()=>{chosenCategory='';view();};bar.append(all);
+    cats.forEach(cat=>{
+      const b=document.createElement('button');b.className='kandy-category-chip'+(chosenCategory===cat.name?' active':'');
+      b.innerHTML=cat.name+'<small>'+tiles.filter(t=>t.folder===active&&t.category===cat.name).length+' products</small>';
+      b.onclick=()=>{chosenCategory=cat.name;view();};bar.append(b);
+    });
+    if(chosenCategory){
+      const keep=tiles;tiles=keep.filter(t=>t.folder===active&&t.category===chosenCategory);oldView();tiles=keep;
+    }else{
+      $('grid').classList.add('hidden');
+      $('count').textContent='Choose a category to view products';
+      $('empty').classList.add('hide');
+    }
+  };
+  ensureCategories();
+  if(typeof renderAdmin==='function')setTimeout(()=>{if(adminUnlocked)renderAdmin();},250);
+  setTimeout(()=>view(),350);
 })();
