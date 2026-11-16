@@ -856,9 +856,23 @@
     if (adminVisible() || !event.target || event.target.tagName !== 'IMG') return;
     const img = event.target;
     const src = img.currentSrc || img.src;
-    const match = getTiles().find(t => sameImage(t.image,src));
-    if (!match) return;
-    selectedTile = match;
+    const match = getTiles().find(t => sameImage(t.image,src) || sameImage(t.image,img.src) || sameImage(t.image,img.getAttribute('src')));
+    if (match) {
+      selectedTile = match;
+    } else {
+      // Keep sharing available even when the gallery uses a transformed/lazy-loaded image URL.
+      const card = img.closest('article, .tile-card, .product-card, .tile-item, .gallery-item, [data-tile], [class*="tile"]') || img.parentElement;
+      const nearbyText = card ? (card.innerText || card.textContent || '') : '';
+      const numberMatch = nearbyText.match(/(?:tile\\s*(?:no|number)?|no\\.?)[\\s:#-]*([a-z0-9-]+)/i) || (img.alt || '').match(/([a-z0-9-]+)/i);
+      const codeMatch = nearbyText.match(/(?:product\\s*code|code)[\\s:#-]*([a-z0-9-]+)/i);
+      const folderMatch = nearbyText.match(/(?:collection|folder)[\\s:#-]*([^\\n|]+)/i);
+      selectedTile = {
+        image: src,
+        number: numberMatch ? numberMatch[1] : (img.alt || 'Tile'),
+        code: codeMatch ? codeMatch[1] : '',
+        folder: folderMatch ? folderMatch[1].trim() : ''
+      };
+    }
     tileBtn.style.display = 'block';
   }, true);
 
