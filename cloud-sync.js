@@ -588,3 +588,115 @@
   insertLogo();
   setTimeout(insertLogo, 250);
 })(); 
+
+
+// Public catalogue colour + water-click effects only.
+// Automatically disabled whenever the Admin Login or Dashboard is visible.
+(function kandyPublicWaterTheme() {
+  if (window.__kandyPublicWaterThemeV1) return;
+  window.__kandyPublicWaterThemeV1 = true;
+
+  const style = document.createElement('style');
+  style.id = 'kandy-public-water-theme-style';
+  style.textContent = `
+    body.kandy-public-water-theme {
+      color: #edfaff !important;
+      background:
+        radial-gradient(ellipse at 12% 8%, rgba(39,177,214,.20), transparent 36%),
+        radial-gradient(ellipse at 88% 84%, rgba(22,104,164,.22), transparent 40%),
+        linear-gradient(135deg, #071522 0%, #0b2638 52%, #081725 100%) fixed !important;
+      background-attachment: fixed !important;
+    }
+    body.kandy-public-water-theme h1,
+    body.kandy-public-water-theme h2,
+    body.kandy-public-water-theme h3,
+    body.kandy-public-water-theme p,
+    body.kandy-public-water-theme label {
+      color: #edfaff;
+    }
+    body.kandy-public-water-theme main,
+    body.kandy-public-water-theme .container,
+    body.kandy-public-water-theme #catalogue,
+    body.kandy-public-water-theme #catalog,
+    body.kandy-public-water-theme .catalogue {
+      background-color: transparent !important;
+    }
+    body.kandy-public-water-theme input,
+    body.kandy-public-water-theme select,
+    body.kandy-public-water-theme textarea {
+      color: #f3fcff !important;
+      background: rgba(4,25,40,.78) !important;
+      border: 1px solid rgba(119,220,244,.38) !important;
+    }
+    body.kandy-public-water-theme input::placeholder,
+    body.kandy-public-water-theme textarea::placeholder {
+      color: rgba(222,245,252,.62) !important;
+    }
+    body.kandy-public-water-theme button {
+      transition: filter .18s ease, box-shadow .18s ease;
+    }
+    body.kandy-public-water-theme button:hover {
+      filter: brightness(1.13);
+      box-shadow: 0 5px 18px rgba(35,190,225,.18);
+    }
+    .kandy-public-water-ripple {
+      position: fixed; z-index: 99999; width: 24px; height: 24px;
+      left: 0; top: 0; pointer-events: none; border-radius: 50%;
+      transform: translate(-50%,-50%) scale(.15);
+      border: 1px solid rgba(222,250,255,.92);
+      background: radial-gradient(circle, rgba(255,255,255,.32), rgba(104,220,247,.14) 48%, transparent 72%);
+      box-shadow: 0 0 12px rgba(120,225,255,.42), inset 0 0 8px rgba(255,255,255,.55);
+      animation: kandyPublicRipple .82s cubic-bezier(.12,.58,.28,1) forwards;
+    }
+    .kandy-public-water-ripple:before,
+    .kandy-public-water-ripple:after {
+      content: ""; position: absolute; inset: -10px; border-radius: 50%;
+      border: 1px solid rgba(207,246,255,.68);
+      animation: kandyPublicRippleRing .82s ease-out forwards;
+    }
+    .kandy-public-water-ripple:after {
+      inset: -20px; border-color: rgba(92,204,237,.42); animation-delay: .06s;
+    }
+    @keyframes kandyPublicRipple {
+      0% { opacity: .95; transform: translate(-50%,-50%) scale(.15); }
+      100% { opacity: 0; transform: translate(-50%,-50%) scale(4.2); }
+    }
+    @keyframes kandyPublicRippleRing {
+      0% { opacity: .82; transform: scale(.2); }
+      100% { opacity: 0; transform: scale(1.7); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .kandy-public-water-ripple,
+      .kandy-public-water-ripple:before,
+      .kandy-public-water-ripple:after { animation-duration: .01ms; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const visible = el => {
+    if (!el || el.classList.contains('hide')) return false;
+    const cs = getComputedStyle(el);
+    return cs.display !== 'none' && cs.visibility !== 'hidden';
+  };
+  function refreshMode() {
+    const login = document.getElementById('login-panel');
+    const dashboard = document.getElementById('dashboard');
+    const adminMode = visible(login) || visible(dashboard);
+    document.body.classList.toggle('kandy-public-water-theme', !adminMode);
+  }
+
+  refreshMode();
+  const observer = new MutationObserver(refreshMode);
+  observer.observe(document.body, { subtree:true, childList:true, attributes:true, attributeFilter:['class','style','hidden'] });
+
+  document.addEventListener('pointerdown', event => {
+    if (!document.body.classList.contains('kandy-public-water-theme')) return;
+    if (event.target && event.target.closest && event.target.closest('#login-panel, #dashboard')) return;
+    const ripple = document.createElement('span');
+    ripple.className = 'kandy-public-water-ripple';
+    ripple.style.left = event.clientX + 'px';
+    ripple.style.top = event.clientY + 'px';
+    document.body.appendChild(ripple);
+    ripple.addEventListener('animationend', () => ripple.remove(), { once:true });
+  }, { passive:true });
+})();
