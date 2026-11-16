@@ -853,14 +853,19 @@
     return a === b || a.split('?')[0] === b.split('?')[0] || a.endsWith(b) || b.endsWith(a);
   }
   document.addEventListener('click', event => {
-    if (adminVisible() || !event.target || event.target.tagName !== 'IMG') return;
-    const img = event.target;
-    const src = img.currentSrc || img.src;
+    if (adminVisible() || !event.target) return;
+    const target = event.target.nodeType === 1 ? event.target : event.target.parentElement;
+    if (!target) return;
+    // Gallery cards sometimes receive the click instead of the nested IMG.
+    const img = target.closest('img') || (target.querySelector && target.querySelector('img'));
+    if (!img || img.tagName !== 'IMG') return;
+    if ((img.naturalWidth || img.width || 0) < 70 && (img.naturalHeight || img.height || 0) < 70) return;
+    const src = img.currentSrc || img.src || img.getAttribute('src') || '';
+    if (!src) return;
     const match = getTiles().find(t => sameImage(t.image,src) || sameImage(t.image,img.src) || sameImage(t.image,img.getAttribute('src')));
     if (match) {
       selectedTile = match;
     } else {
-      // Keep sharing available even when the gallery uses a transformed/lazy-loaded image URL.
       const card = img.closest('article, .tile-card, .product-card, .tile-item, .gallery-item, [data-tile], [class*="tile"]') || img.parentElement;
       const nearbyText = card ? (card.innerText || card.textContent || '') : '';
       const numberMatch = nearbyText.match(/(?:tile\\s*(?:no|number)?|no\\.?)[\\s:#-]*([a-z0-9-]+)/i) || (img.alt || '').match(/([a-z0-9-]+)/i);
@@ -874,6 +879,7 @@
       };
     }
     tileBtn.style.display = 'block';
+    tileBtn.textContent = '⇧ Share This Tile';
   }, true);
 
   function tileDetails(tile) {
