@@ -168,9 +168,11 @@
         if (error) throw error;
       }
       msg('Cloud sync successful. All devices will receive the latest catalogue.');
+      return true;
     } catch (err) {
       console.error('KANDY TILE cloud sync failed:', err);
       msg('Cloud sync failed: ' + friendly(err) + '. Your current browser copy is still saved locally.');
+      return false;
     } finally {
       syncBusy = false;
       if (syncAgain) { syncAgain = false; syncCloudCatalogue(); }
@@ -188,7 +190,8 @@
       if (count > 0) throw new Error('Cloud catalogue is no longer empty. Seed cancelled to protect existing data.');
       tiles = tiles.map(t => ({ ...t }));
       folders = [...folders];
-      await syncCloudCatalogue();
+      const uploaded = await syncCloudCatalogue();
+      if (!uploaded) throw new Error('The cloud upload did not finish. Please check the message above and try again.');
       await loadCloudCatalogue();
       $('cloud-seed').style.display = 'none';
       msg('Your current catalogue (' + tiles.length + ' designs) is now available from the cloud.');
