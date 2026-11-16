@@ -700,3 +700,258 @@
     ripple.addEventListener('animationend', () => ripple.remove(), { once:true });
   }, { passive:true });
 })();
+
+
+// KANDY TILE public sharing: folder catalogue PDF and individual tile photo sharing.
+(function kandyCatalogueSharing() {
+  if (window.__kandyCatalogueSharingV1) return;
+  window.__kandyCatalogueSharingV1 = true;
+
+  const style = document.createElement('style');
+  style.id = 'kandy-catalogue-sharing-style';
+  style.textContent = `
+    #kandy-share-catalogue {
+      position:fixed;left:16px;bottom:18px;z-index:9990;
+      border:1px solid rgba(170,235,250,.65);border-radius:999px;
+      padding:12px 18px;color:#f3fcff;font-weight:700;
+      background:linear-gradient(135deg,#087f9f,#124f78);
+      box-shadow:0 8px 26px rgba(0,20,38,.3);cursor:pointer;
+    }
+    #kandy-share-tile {
+      position:fixed;right:16px;bottom:18px;z-index:9991;
+      border:1px solid rgba(170,235,250,.65);border-radius:999px;
+      padding:12px 18px;color:#f3fcff;font-weight:700;
+      background:linear-gradient(135deg,#087f9f,#124f78);
+      box-shadow:0 8px 26px rgba(0,20,38,.3);cursor:pointer;display:none;
+    }
+    #kandy-share-modal {
+      position:fixed;inset:0;z-index:100000;background:rgba(2,12,23,.76);
+      display:none;align-items:center;justify-content:center;padding:16px;
+      -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    }
+    #kandy-share-modal .ks-card {
+      width:min(440px,100%);max-height:88vh;overflow:auto;padding:22px;
+      border:1px solid rgba(169,231,247,.42);border-radius:20px;
+      color:#eafaff;background:linear-gradient(145deg,#102f43,#071b2c);
+      box-shadow:0 22px 70px rgba(0,0,0,.45);
+    }
+    #kandy-share-modal h2 {margin:0 0 8px;color:#f4fcff}
+    #kandy-share-modal p {color:#c4e1eb}
+    #kandy-share-modal select,#kandy-share-modal button {
+      box-sizing:border-box;width:100%;padding:12px;margin-top:10px;
+      border-radius:11px;border:1px solid rgba(170,235,250,.38);
+      color:#f2fbff;background:#12364b;font-size:15px;
+    }
+    #kandy-share-modal button.primary {background:linear-gradient(135deg,#0799b5,#176ba2);font-weight:700}
+    #kandy-share-modal button:disabled {opacity:.55}
+    #kandy-share-modal .ks-close {background:rgba(255,255,255,.08)}
+    #kandy-share-status {font-size:13px;min-height:18px;margin-top:10px}
+    @media(max-width:520px) {
+      #kandy-share-catalogue,#kandy-share-tile {padding:11px 13px;font-size:13px;bottom:12px}
+      #kandy-share-catalogue {left:10px} #kandy-share-tile {right:10px}
+    }
+  `;
+  document.head.appendChild(style);
+
+  const catalogueBtn = document.createElement('button');
+  catalogueBtn.id = 'kandy-share-catalogue';
+  catalogueBtn.type = 'button';
+  catalogueBtn.textContent = '⇧ Share Catalogue';
+  const tileBtn = document.createElement('button');
+  tileBtn.id = 'kandy-share-tile';
+  tileBtn.type = 'button';
+  tileBtn.textContent = '⇧ Share This Tile';
+  document.body.append(catalogueBtn, tileBtn);
+
+  const modal = document.createElement('div');
+  modal.id = 'kandy-share-modal';
+  modal.innerHTML = `
+    <div class="ks-card" role="dialog" aria-modal="true" aria-labelledby="ks-title">
+      <h2 id="ks-title">Share Catalogue</h2>
+      <p>Select a folder. A PDF will be created with tile photos and product details.</p>
+      <select id="ks-folder" aria-label="Choose catalogue folder"></select>
+      <button id="ks-create" class="primary" type="button">Create PDF & Share</button>
+      <p id="kandy-share-status" aria-live="polite"></p>
+      <button id="ks-close" class="ks-close" type="button">Close</button>
+    </div>`;
+  document.body.appendChild(modal);
+
+  const status = text => { const el = document.getElementById('kandy-share-status'); if (el) el.textContent = text || ''; };
+  const adminVisible = () => {
+    const login = document.getElementById('login-panel');
+    const dashboard = document.getElementById('dashboard');
+    const shown = el => el && !el.classList.contains('hide') && getComputedStyle(el).display !== 'none';
+    return shown(login) || shown(dashboard);
+  };
+  function publicMode() {
+    const active = !adminVisible();
+    catalogueBtn.style.display = active ? 'block' : 'none';
+    if (!active) { tileBtn.style.display = 'none'; modal.style.display = 'none'; }
+  }
+  new MutationObserver(publicMode).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
+  publicMode();
+
+  function getTiles() {
+    return Array.isArray(tiles) ? tiles : [];
+  }
+  function getFolders() {
+    const names = Array.isArray(folders) ? folders : [];
+    return names.length ? names : [...new Set(getTiles().map(t => t.folder).filter(Boolean))];
+  }
+  function showModal() {
+    const select = document.getElementById('ks-folder');
+    select.innerHTML = '';
+    const all = document.createElement('option');
+    all.value = '__ALL__'; all.textContent = 'All Collections';
+    select.appendChild(all);
+    getFolders().forEach(name => {
+      const option = document.createElement('option');
+      option.value = name; option.textContent = name;
+      select.appendChild(option);
+    });
+    status('');
+    modal.style.display = 'flex';
+  }
+  catalogueBtn.addEventListener('click', showModal);
+  document.getElementById('ks-close').addEventListener('click', () => modal.style.display = 'none');
+  modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+
+  let selectedTile = null;
+  function sameImage(a,b) {
+    if (!a || !b) return false;
+    return a === b || a.split('?')[0] === b.split('?')[0] || a.endsWith(b) || b.endsWith(a);
+  }
+  document.addEventListener('click', event => {
+    if (adminVisible() || !event.target || event.target.tagName !== 'IMG') return;
+    const img = event.target;
+    const src = img.currentSrc || img.src;
+    const match = getTiles().find(t => sameImage(t.image,src));
+    if (!match) return;
+    selectedTile = match;
+    tileBtn.style.display = 'block';
+  }, true);
+
+  function tileDetails(tile) {
+    return [
+      tile.number ? 'Tile Number: ' + tile.number : '',
+      tile.code ? 'Product Code: ' + tile.code : '',
+      tile.folder ? 'Collection: ' + tile.folder : ''
+    ].filter(Boolean).join(' | ');
+  }
+  async function imageFile(url, name) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Photo could not be loaded');
+    const blob = await response.blob();
+    const type = blob.type || 'image/jpeg';
+    const ext = type.includes('png') ? 'png' : type.includes('webp') ? 'webp' : 'jpg';
+    return new File([blob], name + '.' + ext, {type});
+  }
+  async function shareTile() {
+    if (!selectedTile) return;
+    const tile = selectedTile;
+    const details = 'KANDY TILE' + (tileDetails(tile) ? '\\n' + tileDetails(tile) : '');
+    try {
+      const file = await imageFile(tile.image, 'KANDY-TILE-' + (tile.number || 'Product'));
+      if (navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))) {
+        await navigator.share({title:'KANDY TILE',text:details,files:[file]});
+      } else {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(file); link.download = file.name; link.click();
+        URL.revokeObjectURL(link.href);
+        if (navigator.share) await navigator.share({title:'KANDY TILE',text:details});
+        else { await navigator.clipboard?.writeText(details); alert('Photo downloaded. Product details copied. Share the downloaded photo.'); }
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+      alert('Could not share this photo. Please try again or download the photo from the catalogue.');
+      console.error('KANDY TILE single photo share:',err);
+    }
+  }
+  tileBtn.addEventListener('click', shareTile);
+
+  function loadPdfLibrary() {
+    if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
+    if (window.__kandyPdfLoading) return window.__kandyPdfLoading;
+    window.__kandyPdfLoading = new Promise((resolve,reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('PDF library could not be loaded. Check your internet connection.'));
+      document.head.appendChild(script);
+    });
+    return window.__kandyPdfLoading;
+  }
+  async function imageData(url) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Image download failed');
+    const blob = await response.blob();
+    return await new Promise((resolve,reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+  async function createCataloguePdf() {
+    const chosen = document.getElementById('ks-folder').value;
+    const items = getTiles().filter(t => chosen === '__ALL__' || t.folder === chosen);
+    if (!items.length) { status('No products found in this folder.'); return; }
+    const button = document.getElementById('ks-create');
+    button.disabled = true;
+    try {
+      status('Preparing PDF. Please wait...');
+      await loadPdfLibrary();
+      const {jsPDF} = window.jspdf;
+      const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      const heading = chosen === '__ALL__' ? 'All Collections' : chosen;
+      pdf.setFillColor(7,31,48); pdf.rect(0,0,210,297,'F');
+      pdf.setTextColor(235,249,255); pdf.setFontSize(22); pdf.text('KANDY TILE',14,20);
+      pdf.setFontSize(15); pdf.text(heading,14,30);
+      pdf.setFontSize(9); pdf.setTextColor(174,216,230);
+      pdf.text('REFLECT YOUR DREAM  |  ' + items.length + ' Products',14,37);
+      let y = 47;
+      for (let i=0;i<items.length;i++) {
+        if (y > 245) {
+          pdf.addPage(); pdf.setFillColor(7,31,48); pdf.rect(0,0,210,297,'F');
+          y = 18;
+        }
+        const item = items[i];
+        pdf.setDrawColor(65,139,163); pdf.roundedRect(12,y,186,106,3,3,'S');
+        try {
+          const data = await imageData(item.image);
+          const format = data.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+          pdf.addImage(data,format,17,y+6,82,76,undefined,'FAST');
+        } catch (e) {
+          pdf.setTextColor(180,210,220); pdf.setFontSize(10);
+          pdf.text('Product photo unavailable',20,y+42);
+        }
+        pdf.setTextColor(238,250,255); pdf.setFontSize(13);
+        pdf.text('Product ' + (i+1),108,y+18);
+        pdf.setFontSize(10); pdf.setTextColor(184,224,236);
+        const lines = [
+          item.number ? 'Tile Number: ' + item.number : '',
+          item.code ? 'Product Code: ' + item.code : '',
+          item.folder ? 'Collection: ' + item.folder : ''
+        ].filter(Boolean);
+        lines.forEach((line,j) => pdf.text(pdf.splitTextToSize(line,80),108,y+32+j*12));
+        y += 113;
+      }
+      const safe = heading.replace(/[^a-z0-9-_]+/gi,'-');
+      const fileName = 'KANDY-TILE-' + safe + '.pdf';
+      const blob = pdf.output('blob');
+      const file = new File([blob],fileName,{type:'application/pdf'});
+      if (navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))) {
+        status('Opening share options...');
+        await navigator.share({title:'KANDY TILE Catalogue - '+heading,text:'KANDY TILE product catalogue',files:[file]});
+        status('PDF shared successfully.');
+      } else {
+        pdf.save(fileName);
+        status('PDF created and downloaded. You can now share the PDF file.');
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') status('Sharing cancelled.');
+      else { status(err.message || 'PDF creation failed.'); console.error('KANDY TILE PDF:',err); }
+    } finally { button.disabled = false; }
+  }
+  document.getElementById('ks-create').addEventListener('click',createCataloguePdf);
+})();
