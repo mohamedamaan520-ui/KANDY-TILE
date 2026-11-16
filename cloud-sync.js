@@ -178,20 +178,20 @@
   }
 
   async function seedExisting() {
-    if (!isCloudAdmin || !Array.isArray(ORIGINAL) || !ORIGINAL.length) return;
-    if (!confirm('Upload all 87 original designs and photos to Supabase? This will only run when the cloud catalogue is empty.')) return;
+    if (!isCloudAdmin || !Array.isArray(tiles) || !tiles.length) return;
+    if (!confirm('Upload the current ' + tiles.length + ' tile designs and photos to Supabase? This only runs when the cloud catalogue is empty.')) return;
     $('cloud-seed').disabled = true;
     msg('Uploading original tile photos. Please keep this page open...');
     try {
       const { count, error } = await client.from('catalog_tiles').select('id', { count: 'exact', head: true });
       if (error) throw error;
       if (count > 0) throw new Error('Cloud catalogue is no longer empty. Seed cancelled to protect existing data.');
-      tiles = ORIGINAL.map(t => ({ ...t }));
-      folders = ['Gloss', 'Nano Polish', 'Sugar', 'Vivid'];
+      tiles = tiles.map(t => ({ ...t }));
+      folders = [...folders];
       await syncCloudCatalogue();
       await loadCloudCatalogue();
       $('cloud-seed').style.display = 'none';
-      msg('Original catalogue uploaded. 87 designs are now available from the cloud.');
+      msg('Your current catalogue (' + tiles.length + ' designs) is now available from the cloud.');
     } catch (err) { msg('Initial upload stopped: ' + friendly(err)); }
     finally { $('cloud-seed').disabled = false; }
   }
