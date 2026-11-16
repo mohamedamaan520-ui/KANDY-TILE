@@ -1128,3 +1128,24 @@
   setInterval(boot, 1500);
   new MutationObserver(() => { if (!timer) boot(); }).observe(document.body,{childList:true,subtree:true});
 })();
+
+
+// KANDY TILE installable app branding (favicon + home-screen/desktop shortcut icon)
+(function kandyTileAppBranding(){
+  function addLink(rel, href, extra){
+    let el = document.querySelector('link[rel="' + rel + '"]');
+    if (!el) { el = document.createElement('link'); el.rel = rel; document.head.appendChild(el); }
+    el.href = href;
+    if (extra) Object.keys(extra).forEach(k => el.setAttribute(k, extra[k]));
+  }
+  function apply(){
+    addLink('manifest', './manifest.json');
+    addLink('icon', './kandy-tile-icon.svg', {type:'image/svg+xml'});
+    addLink('apple-touch-icon', './kandy-tile-icon.svg');
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) { meta=document.createElement('meta'); meta.name='theme-color'; document.head.appendChild(meta); }
+    meta.content='#153c4a';
+  }
+  if (document.head) apply();
+  else document.addEventListener('DOMContentLoaded', apply, {once:true});
+})();
