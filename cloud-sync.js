@@ -1089,8 +1089,8 @@
     return candidates[0] || null;
   }
   function cataloguePhotos() {
-    if (!Array.isArray(window.tiles)) return [];
-    return window.tiles.filter(t => t && typeof t.image === 'string' && /^https?:|^data:image\//i.test(t.image));
+    if (typeof tiles === 'undefined' || !Array.isArray(tiles)) return [];
+    return tiles.filter(t => t && typeof t.image === 'string' && /^https?:|^data:image\\//i.test(t.image));
   }
   function start() {
     if (!publicPage()) { if (timer) clearInterval(timer); timer=null; return; }
