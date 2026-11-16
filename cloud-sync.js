@@ -541,126 +541,67 @@
 })();
 
 
-// KANDY TILE nested Collection -> Category -> Products navigation and category manager.
-(function kandyNestedCatalogue(){
-  if(window.__kandyNestedCatalogueV1)return;
-  window.__kandyNestedCatalogueV1=true;
-  const $=id=>document.getElementById(id);
-  let chosenCategory='';
-  const style=document.createElement('style');
-  style.textContent=`
-    .kandy-category-bar{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 22px}
-    .kandy-category-chip{border:1px solid #d6e8f1;background:#fff;color:#16415a;border-radius:14px;padding:13px 18px;font-weight:800;box-shadow:0 5px 18px #06304a12}
-    .kandy-category-chip.active{background:linear-gradient(135deg,#087fa9,#155b91);color:#fff}
-    .kandy-category-chip small{display:block;font-weight:500;opacity:.78;margin-top:4px}
-    .kandy-category-admin{border:1px solid rgba(222,247,255,.22);border-radius:16px;padding:15px;margin:12px 0;background:rgba(3,31,52,.2)}
-    .kandy-category-admin .admin-row{align-items:center}
-    .kandy-category-admin strong{flex:1}
+// KANDY TILE Admin brand mark — dashboard only; public catalogue remains unchanged.
+(function addKandyAdminLogo() {
+  if (window.__kandyAdminLogoV1) return;
+  window.__kandyAdminLogoV1 = true;
+
+  const css = document.createElement('style');
+  css.id = 'kandy-admin-logo-style';
+  css.textContent = `
+    #dashboard .kandy-admin-brand {
+      display:flex;align-items:center;gap:13px;margin:0 0 18px;padding:14px 18px;
+      border:1px solid rgba(232,205,139,.48);border-radius:18px;
+      background:linear-gradient(115deg,rgba(7,27,43,.92),rgba(14,67,87,.82));
+      box-shadow:0 12px 30px rgba(0,10,28,.24),inset 0 1px 0 rgba(255,255,255,.16);
+      color:#fff;max-width:100%;
+    }
+    #dashboard .kandy-admin-brand-mark {
+      width:52px;height:52px;flex:0 0 52px;display:grid;place-items:center;
+      border-radius:15px;border:1px solid rgba(239,211,146,.72);
+      background:linear-gradient(145deg,rgba(245,214,147,.24),rgba(255,255,255,.06));
+      box-shadow:inset 0 1px 5px rgba(255,255,255,.2),0 5px 16px rgba(0,0,0,.18);
+    }
+    #dashboard .kandy-admin-brand-mark svg{width:36px;height:36px;display:block}
+    #dashboard .kandy-admin-brand-copy{min-width:0}
+    #dashboard .kandy-admin-brand-name{font-weight:900;letter-spacing:2px;font-size:17px;line-height:1.2;color:#f6d99e}
+    #dashboard .kandy-admin-brand-sub{font-size:12px;letter-spacing:.7px;color:#e8f5fa;margin-top:4px}
+    #dashboard .kandy-admin-brand-tag{font-size:10px;letter-spacing:1.5px;color:#d6bb82;margin-top:5px}
+    @media(max-width:520px){
+      #dashboard .kandy-admin-brand{padding:11px 13px;gap:10px}
+      #dashboard .kandy-admin-brand-mark{width:44px;height:44px;flex-basis:44px}
+      #dashboard .kandy-admin-brand-name{font-size:15px}
+    }
   `;
-  document.head.appendChild(style);
-  function ensureCategories(){
-    if(!Array.isArray(catalogCategories))catalogCategories=[];
-    folders.forEach(collection=>{
-      if(!catalogCategories.some(x=>x.collection===collection))catalogCategories.push({collection,name:'Tiles',sort_order:0});
-    });
-    tiles.forEach(t=>{if(!t.category)t.category='Tiles'});
+  document.head.appendChild(css);
+
+  function insertLogo() {
+    const dashboard = document.getElementById('dashboard');
+    if (!dashboard || dashboard.classList.contains('hide') || dashboard.querySelector('.kandy-admin-brand')) return;
+    const brand = document.createElement('div');
+    brand.className = 'kandy-admin-brand';
+    brand.innerHTML = `
+      <span class="kandy-admin-brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M7 21.5 24 7l17 14.5v18H7v-18Z" stroke="#F2D49A" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="m16 22 8-7 8 7v17H16V22Z" stroke="#F2D49A" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M20 39V27h8v12M5 22l19-16 19 16" stroke="#FFF3D6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="m19 11 5-5 5 5" stroke="#F2D49A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span class="kandy-admin-brand-copy">
+        <span class="kandy-admin-brand-name">KANDY TILE</span>
+        <span class="kandy-admin-brand-sub">Catalogue Admin</span>
+        <span class="kandy-admin-brand-tag">REFLECT YOUR DREAM</span>
+      </span>`;
+    const firstPanel = dashboard.querySelector('.admin-panel');
+    if (firstPanel) dashboard.insertBefore(brand, firstPanel);
+    else dashboard.prepend(brand);
   }
-  function categoryList(collection){return catalogCategories.filter(x=>x.collection===collection).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));}
-  function renderCategoryManager(){
-    const dash=$('dashboard');if(!dash||dash.classList.contains('hide'))return;
-    let panel=$('kandy-category-manager');
-    if(!panel){
-      panel=document.createElement('section');panel.id='kandy-category-manager';panel.className='admin-panel';
-      const folderPanel=$('folder-manager')?.closest('.admin-panel');
-      if(folderPanel)folderPanel.after(panel);else dash.prepend(panel);
-    }
-    panel.innerHTML='<h3>Manage Product Categories</h3><p class="notice">Create categories inside each collection, such as Tiles, Washbasins and other products.</p><div class="admin-row"><select id="kandy-category-collection" aria-label="Collection"></select><input id="kandy-new-category" placeholder="New category name"><button class="primary" id="kandy-add-category" type="button">Add Category</button></div><div id="kandy-category-rows"></div>';
-    const collection=$('kandy-category-collection');
-    collection.innerHTML=folders.map(f=>'<option value="'+String(f).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+f+'</option>').join('');
-    const rows=$('kandy-category-rows');
-    function list(){
-      rows.replaceChildren();
-      categoryList(collection.value).forEach(cat=>{
-        const row=document.createElement('div');row.className='admin-row kandy-category-admin';
-        const label=document.createElement('strong');label.textContent=cat.name+' ('+tiles.filter(t=>t.folder===cat.collection&&t.category===cat.name).length+' products)';
-        const rename=document.createElement('button');rename.type='button';rename.textContent='Rename';
-        rename.onclick=()=>{const next=prompt('Rename category:',cat.name)?.trim();if(!next||next===cat.name)return;if(categoryList(cat.collection).some(x=>x.name===next))return alert('Category already exists.');const old=cat.name;cat.name=next;tiles.forEach(t=>{if(t.folder===cat.collection&&t.category===old)t.category=next});chosenCategory=next;save();renderCategoryManager();view();};
-        const del=document.createElement('button');del.type='button';del.textContent='Delete';
-        del.onclick=()=>{if(tiles.some(t=>t.folder===cat.collection&&t.category===cat.name))return alert('Move or delete the products in this category first.');if(!confirm('Delete category '+cat.name+'?'))return;catalogCategories=catalogCategories.filter(x=>!(x.collection===cat.collection&&x.name===cat.name));if(chosenCategory===cat.name)chosenCategory='';save();renderCategoryManager();view();};
-        row.append(label,rename,del);rows.append(row);
-      });
-    }
-    collection.onchange=list;
-    $('kandy-add-category').onclick=()=>{const name=$('kandy-new-category').value.trim();if(!name)return alert('Enter a category name.');if(categoryList(collection.value).some(x=>x.name.toLowerCase()===name.toLowerCase()))return alert('Category already exists.');catalogCategories.push({collection:collection.value,name,sort_order:categoryList(collection.value).length});$('kandy-new-category').value='';save();list();view();};
-    list();
-  }
-  function addCategoryField(){
-    const form=$('tile-form');if(!form||$('edit-category'))return;
-    const row=document.createElement('div');row.className='admin-row';
-    const select=document.createElement('select');select.id='edit-category';select.required=true;select.setAttribute('aria-label','Product category');
-    const hint=document.createElement('span');hint.className='notice';hint.textContent='Choose the category inside the selected collection.';
-    row.append(select,hint);const folder=$('edit-folder')?.closest('.admin-row');
-    if(folder)folder.after(row);else form.prepend(row);
-    function fill(preferred){const cats=categoryList($('edit-folder').value);select.innerHTML=cats.map(c=>'<option value="'+c.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+c.name+'</option>').join('');if(preferred&&cats.some(c=>c.name===preferred))select.value=preferred;}
-    $('edit-folder').addEventListener('change',()=>fill('Tiles'));
-    fill('Tiles');
-    // Capture before the original submit handler saves the product.
-    if(!form.__kandyCategorySubmit){
-      form.__kandyCategorySubmit=true;
-      form.addEventListener('submit',()=>{
-        const item=tiles.find(t=>t.id===editing);
-        if(item)item.category=select.value;
-        window.__kandyChosenCategory=select.value||'Tiles';
-      },true);
-    }
-    const editButtons=$('admin-list');
-    if(editButtons&&!editButtons.__categoryHook){
-      editButtons.__categoryHook=true;
-      new MutationObserver(()=>{editButtons.querySelectorAll('.admin-item button').forEach(btn=>{if(btn.textContent==='Edit'&&!btn.__catHook){btn.__catHook=true;btn.addEventListener('click',()=>{const card=btn.closest('.admin-item');const text=card?.querySelector('div')?.textContent||'';const product=tiles.find(t=>text.includes(t.number)&&text.includes(t.code));setTimeout(()=>{if(product)fill(product.category||'Tiles');},0);});}})}).observe(editButtons,{childList:true,subtree:true});
-    }
-    void oldSubmit;
-  }
-  const oldRenderAdmin=renderAdmin;
-  renderAdmin=function(){ensureCategories();oldRenderAdmin();renderCategoryManager();addCategoryField();};
-  const oldSave=save;
-  save=function(){ensureCategories();return oldSave();};
-  const oldView=view;
-  view=function(){
-    ensureCategories();
-    oldView();
-    const folderBar=$('folders');if(!folderBar)return;
-    let bar=$('kandy-public-categories');
-    if(!bar){bar=document.createElement('div');bar.id='kandy-public-categories';bar.className='kandy-category-bar';folderBar.after(bar);}
-    bar.replaceChildren();
-    if(active==='All Collections'){
-      bar.replaceChildren();
-      $('grid').classList.add('hidden');
-      $('count').textContent='Select a collection to view product categories';
-      $('empty').classList.add('hide');
-      return;
-    }
-    const cats=categoryList(active);
-    if(!cats.length){$('grid').classList.add('hidden');$('count').textContent='No categories yet. Please add a category in Admin.';return;}
-    const all=document.createElement('button');all.className='kandy-category-chip'+(!chosenCategory?' active':'');all.innerHTML='All categories<small>'+tiles.filter(t=>t.folder===active).length+' products</small>';all.onclick=()=>{chosenCategory='';view();};bar.append(all);
-    cats.forEach(cat=>{
-      const b=document.createElement('button');b.className='kandy-category-chip'+(chosenCategory===cat.name?' active':'');
-      b.innerHTML=cat.name+'<small>'+tiles.filter(t=>t.folder===active&&t.category===cat.name).length+' products</small>';
-      b.onclick=()=>{chosenCategory=cat.name;view();};bar.append(b);
-    });
-    if(chosenCategory){
-      const keep=tiles;tiles=keep.filter(t=>t.folder===active&&t.category===chosenCategory);oldView();tiles=keep;
-    }else{
-      $('grid').classList.add('hidden');
-      $('count').textContent='Choose a category to view products';
-      $('empty').classList.add('hide');
-    }
-  };
-  ensureCategories();
-  if(!tiles.__kandyCategoryPushHook){
-    const originalPush=tiles.push.bind(tiles);
-    tiles.push=(...items)=>originalPush(...items.map(item=>item.category?item:{...item,category:window.__kandyChosenCategory||'Tiles'}));
-    Object.defineProperty(tiles,'__kandyCategoryPushHook',{value:true});
-  }
-  if(typeof renderAdmin==='function')setTimeout(()=>{if(adminUnlocked)renderAdmin();},250);
-  setTimeout(()=>view(),350);
-})();
+
+  const dashboard = document.getElementById('dashboard');
+  if (!dashboard) return;
+  new MutationObserver(insertLogo).observe(dashboard, { attributes:true, childList:true, subtree:false, attributeFilter:['class'] });
+  insertLogo();
+  setTimeout(insertLogo, 250);
+})(); 
