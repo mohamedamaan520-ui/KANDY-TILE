@@ -1504,198 +1504,78 @@
 })();
 
 
-// KANDY TILE public appearance: white background with a visitor theme switch.
-(function addKandyThemeSwitch() {
-  if (window.__kandyThemeSwitchReady) return;
-  window.__kandyThemeSwitchReady = true;
+// KANDY TILE fixed customer/admin appearance: customer pages stay white;
+// only the Admin login/dashboard uses the dark interface. No theme toggle.
+(function setKandyFixedPageAppearance() {
+  if (window.__kandyFixedAppearanceReady) return;
+  window.__kandyFixedAppearanceReady = true;
+
   const style = document.createElement('style');
-  style.id = 'kandy-public-theme-style';
+  style.id = 'kandy-fixed-appearance-style';
   style.textContent = `
-    body:not(.water-glass-login-active) {
+    /* Customer catalogue: always white. */
+    body:not(.kandy-admin-area) {
       background: #ffffff !important;
       background-color: #ffffff !important;
-      transition: background-color .2s ease;
     }
-    body.kandy-theme-dark:not(.water-glass-login-active) {
+
+    /* Admin login and dashboard only: dark background and panels. */
+    body.kandy-admin-area {
       background: #111827 !important;
       background-color: #111827 !important;
-     }
-     #kandy-theme-switch {
-      position: relative; display: inline-flex; align-items: center; justify-content: center;
-      flex: 0 0 auto; margin: 0 8px; vertical-align: middle; z-index: 20;
-      border: 1px solid rgba(100,116,139,.35); border-radius: 999px;
-      padding: 10px 15px; min-height: 42px;
-      background: #ffffff; color: #172033;
-      box-shadow: 0 5px 20px rgba(0,0,0,.16);
-      font: 600 13px/1.2 Arial,sans-serif; cursor: pointer;
+      color: #f3f4f6;
     }
-    body.kandy-theme-dark #kandy-theme-switch {
-      background: #263449; color: #ffffff; border-color: #64748b;
-    }
-    @media(max-width:600px) {
-      #kandy-theme-switch { margin: 6px 4px; padding: 8px 10px; font-size: 12px; }
-    }
-  `;
-  document.head.appendChild(style);
-  let dark = false;
-  try { dark = localStorage.getItem('kandy-public-theme') === 'dark'; } catch (_) {}
-  const button = document.createElement('button');
-  button.id = 'kandy-theme-switch';
-  button.type = 'button';
-  button.setAttribute('aria-label', 'Switch between light and dark mode');
-  // Preserve the exact KANDY TILE wordmark colours in both themes:
-  // KANDY stays black and TILE stays red, independent of page theme.
-  function lockKandyWordmarkColours() {
-    const candidates = Array.from(document.querySelectorAll('header *, nav *, h1, h2, [id*="logo" i], [class*="logo" i], [id*="brand" i], [class*="brand" i]'));
-    candidates.forEach(el => {
-      if (!el || el.closest('#kandy-theme-switch')) return;
-      const ownText = Array.from(el.childNodes)
-        .filter(n => n.nodeType === Node.TEXT_NODE)
-        .map(n => n.textContent).join(' ').replace(/\\s+/g, ' ').trim();
-      if (!el.children.length && /^(KANDY|TILE)$/i.test((el.textContent || '').trim())) {
-        const word = (el.textContent || '').trim().toUpperCase();
-        el.style.setProperty('color', word === 'KANDY' ? '#000000' : '#e32636', 'important');
-      } else if (!el.children.length && /^KANDY\\s+TILE\\.?$/i.test((el.textContent || '').trim())) {
-        const match = (el.textContent || '').trim().match(/^(KANDY)(\\s+)(TILE\\.?)$/i);
-        if (match) {
-          const black = document.createElement('span');
-          black.textContent = match[1];
-          black.style.setProperty('color', '#000000', 'important');
-          const red = document.createElement('span');
-          red.textContent = match[3];
-          red.style.setProperty('color', '#e32636', 'important');
-          el.replaceChildren(black, document.createTextNode(match[2]), red);
-        }
-      }
-    });
-  }
-  lockKandyWordmarkColours();
-  // Capture the original brand/logo colours before applying either theme.
-  const logoNodes = Array.from(document.querySelectorAll('[id*="logo" i],[class*="logo" i],[id*="brand" i],[class*="brand" i]'));
-  const brandTextNodes = Array.from(document.querySelectorAll('header *, nav *, h1, h2')).filter(el =>
-    (el.children.length === 0 && /KANDY\\s*TILE/i.test(el.textContent || '')) ||
-    (/KANDY\\s*TILE/i.test(el.textContent || '') && el.children.length < 3)
-  );
-  [...new Set([...logoNodes, ...brandTextNodes])].forEach(el => {
-    const cs = getComputedStyle(el);
-    if (cs.color) el.style.setProperty('color', cs.color, 'important');
-    if (el.tagName.toLowerCase() === 'svg') {
-      if (cs.fill) el.style.setProperty('fill', cs.fill, 'important');
-      if (cs.stroke) el.style.setProperty('stroke', cs.stroke, 'important');
-    }
-    el.querySelectorAll('svg,svg *').forEach(node => {
-      const svgcs = getComputedStyle(node);
-      if (svgcs.fill && svgcs.fill !== 'none') node.style.setProperty('fill', svgcs.fill, 'important');
-      if (svgcs.stroke && svgcs.stroke !== 'none') node.style.setProperty('stroke', svgcs.stroke, 'important');
-    });
-  });
-
-  function placeThemeButton() {
-    const all = Array.from(document.querySelectorAll('a,button,[role="button"],div,span'));
-    const visible = el => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
-    const share = all
-      .filter(el => visible(el) && /share\\s*catalogue/i.test((el.innerText || el.textContent || '').trim()))
-      .sort((x,y) => (x.innerText || x.textContent || '').length - (y.innerText || y.textContent || '').length)[0];
-    const admin = all
-      .filter(el => visible(el) && /^admin$/i.test((el.innerText || el.textContent || '').trim()))
-      .sort((x,y) => (x.innerText || x.textContent || '').length - (y.innerText || y.textContent || '').length)[0];
-    if (share && share.parentElement) {
-      // Do not move an already correctly placed button: doing so retriggers
-      // the observer forever and can prevent the page from finishing loading.
-      if (share.nextElementSibling !== button) {
-        share.insertAdjacentElement('afterend', button);
-      }
-      return true;
-    }
-    if (admin && admin.parentElement) {
-      if (admin.previousElementSibling !== button) {
-        admin.insertAdjacentElement('beforebegin', button);
-      }
-      return true;
-    }
-    return false;
-  }
-  function paint() {
-    lockKandyWordmarkColours();
-    document.body.classList.toggle('kandy-theme-dark', dark);
-    button.textContent = dark ? '☀ Light Mode' : '🌙 Dark Mode';
-    button.setAttribute('aria-pressed', String(dark));
-  }
-  button.addEventListener('click', () => {
-    dark = !dark;
-    try { localStorage.setItem('kandy-public-theme', dark ? 'dark' : 'light'); } catch (_) {}
-    paint();
-  });
-  paint();
-  // Keep the switch between Share Catalogue and Admin, including when header is rendered late.
-  const tryPlaceButton = () => {
-    if (placeThemeButton()) return true;
-    return false;
-  };
-  tryPlaceButton();
-  const headerObserver = new MutationObserver(() => { tryPlaceButton(); });
-  headerObserver.observe(document.body, { childList: true, subtree: true });
-})();
-
-
-/* KANDY TILE admin dashboard dark-mode styling */
-(function styleKandyAdminDarkMode() {
-  if (document.getElementById('kandy-admin-dark-style')) return;
-  const style = document.createElement('style');
-  style.id = 'kandy-admin-dark-style';
-  style.textContent = `
-    body.kandy-theme-dark #dashboard,
-    body.kandy-theme-dark #dashboard .admin-panel,
-    body.kandy-theme-dark #dashboard .panel,
-    body.kandy-theme-dark #dashboard .card,
-    body.kandy-theme-dark #dashboard .stat-card,
-    body.kandy-theme-dark #dashboard .section,
-    body.kandy-theme-dark #dashboard .modal-content {
+    body.kandy-admin-area #login-panel,
+    body.kandy-admin-area #dashboard,
+    body.kandy-admin-area #dashboard .admin-panel,
+    body.kandy-admin-area #dashboard .panel,
+    body.kandy-admin-area #dashboard .card,
+    body.kandy-admin-area #dashboard .stat-card,
+    body.kandy-admin-area #dashboard .section,
+    body.kandy-admin-area #dashboard .modal-content,
+    body.kandy-admin-area #dashboard table,
+    body.kandy-admin-area #dashboard tr {
       background-color: #1f2937 !important;
       border-color: #475569 !important;
+      color: #f3f4f6;
     }
-     body.kandy-theme-dark #dashboard input:not([type="checkbox"]),
-    body.kandy-theme-dark #dashboard select,
-    body.kandy-theme-dark #dashboard textarea {
+    body.kandy-admin-area #login-panel input,
+    body.kandy-admin-area #dashboard input:not([type="checkbox"]),
+    body.kandy-admin-area #dashboard select,
+    body.kandy-admin-area #dashboard textarea {
       background: #111827 !important;
       border-color: #64748b !important;
+      color: #f9fafb !important;
     }
-    body.kandy-theme-dark #dashboard input::placeholder,
-    body.kandy-theme-dark #dashboard textarea::placeholder {
-     }
-    body.kandy-theme-dark #dashboard table,
-    body.kandy-theme-dark #dashboard tr {
-      background-color: #1f2937 !important;
-      border-color: #475569 !important;
-    }
-    body.kandy-theme-dark #dashboard button:not(.primary):not(.danger) {
+    body.kandy-admin-area #dashboard button:not(.primary):not(.danger) {
       background-color: #334155;
       border-color: #64748b;
+      color: #f9fafb;
     }
-    body.kandy-theme-dark #dashboard .hide { display: none !important; }
-
-    /* Keep all original logo/brand artwork and colours unchanged in either theme. */
-    body.kandy-theme-dark [id*="logo" i],
-    body.kandy-theme-dark [class*="logo" i],
-    body.kandy-theme-dark [id*="brand" i],
-    body.kandy-theme-dark [class*="brand" i],
-    body.kandy-theme-dark [id*="logo" i] *,
-    body.kandy-theme-dark [class*="logo" i] *,
-    body.kandy-theme-dark [id*="brand" i] *,
-    body.kandy-theme-dark [class*="brand" i] * {
-      color: revert !important;
-      background: revert !important;
-      border-color: revert !important;
-      filter: none !important;
-      text-shadow: revert !important;
-    }
-    body.kandy-theme-dark [id*="logo" i] svg *,
-    body.kandy-theme-dark [class*="logo" i] svg *,
-    body.kandy-theme-dark [id*="brand" i] svg *,
-    body.kandy-theme-dark [class*="brand" i] svg * {
-      fill: revert !important;
-      stroke: revert !important;
-    }
+    body.kandy-admin-area #dashboard .hide { display: none !important; }
   `;
   document.head.appendChild(style);
+
+  function updateArea() {
+    const login = document.getElementById('login-panel');
+    const dashboard = document.getElementById('dashboard');
+    const visible = el => !!el && !el.classList.contains('hide') &&
+      getComputedStyle(el).display !== 'none' &&
+      getComputedStyle(el).visibility !== 'hidden';
+    const adminPage = visible(login) || visible(dashboard);
+    document.body.classList.toggle('kandy-admin-area', adminPage);
+    // Remove any theme state or leftover switch created by an older cached script.
+    document.body.classList.remove('kandy-theme-dark');
+    const oldSwitch = document.getElementById('kandy-theme-switch');
+    if (oldSwitch) oldSwitch.remove();
+  }
+
+  updateArea();
+  const observer = new MutationObserver(updateArea);
+  observer.observe(document.body, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ['class', 'style', 'hidden']
+  });
 })();
