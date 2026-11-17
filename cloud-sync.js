@@ -1619,6 +1619,29 @@
       border-color: #64748b;
     }
     body.kandy-theme-dark #dashboard .hide { display: none !important; }
+
+    /* Keep all original logo/brand artwork and colours unchanged in either theme. */
+    body.kandy-theme-dark [id*="logo" i],
+    body.kandy-theme-dark [class*="logo" i],
+    body.kandy-theme-dark [id*="brand" i],
+    body.kandy-theme-dark [class*="brand" i],
+    body.kandy-theme-dark [id*="logo" i] *,
+    body.kandy-theme-dark [class*="logo" i] *,
+    body.kandy-theme-dark [id*="brand" i] *,
+    body.kandy-theme-dark [class*="brand" i] * {
+      color: revert !important;
+      background: revert !important;
+      border-color: revert !important;
+      filter: none !important;
+      text-shadow: revert !important;
+    }
+    body.kandy-theme-dark [id*="logo" i] svg *,
+    body.kandy-theme-dark [class*="logo" i] svg *,
+    body.kandy-theme-dark [id*="brand" i] svg *,
+    body.kandy-theme-dark [class*="brand" i] svg * {
+      fill: revert !important;
+      stroke: revert !important;
+    }
   `;
   document.head.appendChild(style);
 })();
