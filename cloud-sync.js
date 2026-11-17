@@ -1383,31 +1383,10 @@
   dialog.id='kandy-folder-pdf-dialog';
   dialog.innerHTML='<div class="kfp-card" role="dialog" aria-modal="true"><h2>Share Tile Folder PDF</h2><p>Select a folder. All tile photos and available item details will be included in one PDF.</p><select id="kfp-folder"><option value="">Loading folders...</option></select><button class="primary" id="kfp-share" type="button">Create PDF & Share</button><p id="kfp-status" aria-live="polite"></p><button id="kfp-close" type="button">Close</button></div>';
   document.body.append(btn,dialog);
-  /* Show Export beside the selected collection chip, not as a floating global control. */
-  btn.style.display='none';
-  let inlineExport=null, selectedFolderForExport='';
-  function folderLabel(el){return String(el.innerText||el.textContent||'').split('(')[0].trim();}
-  function showInlineExport(chip,folder){
-    if(inlineExport)inlineExport.remove();
-    inlineExport=document.createElement('button');inlineExport.type='button';inlineExport.textContent='⇧ Export PDF';
-    inlineExport.style.cssText='display:inline-flex;align-items:center;margin:6px 0 6px 8px;padding:9px 14px;border:0;border-radius:999px;background:#087f9f;color:#fff;font-weight:800;cursor:pointer;box-shadow:0 4px 14px #087f9f55;position:relative;z-index:20;';
-    inlineExport.addEventListener('click',async function(e){e.preventDefault();e.stopPropagation();selectedFolderForExport=folder;dialog.style.display='flex';try{await loadFolders();const sel=document.getElementById('kfp-folder');sel.value=folder;status(folder+' selected. Press Create PDF & Share.');}catch(err){status(err.message);}});
-    chip.insertAdjacentElement('afterend',inlineExport);
-  }
-  document.addEventListener('click',async function(e){
-    if(e.target&&e.target.closest&&e.target.closest('#kandy-folder-pdf-dialog'))return;
-    let el=e.target&&e.target.nodeType===1?e.target:null;
-    if(!el)return;
-    const label=folderLabel(el);
-    if(!label||label.length>60)return;
-    const candidates=Array.from(document.querySelectorAll('button,a,[role="button"],.filter,.filter-btn,.folder,.collection'));
-    const chip=candidates.find(x=>x===el||x.contains(el));
-    if(!chip)return;
-    try{const data=await rows();const folders=[...new Set(data.map(x=>x.folder).filter(Boolean))];const match=folders.find(f=>f.toLowerCase()===label.toLowerCase());if(match)showInlineExport(chip,match);}catch(_){ }
-  },true);
+  btn.style.display='block';
   const status=t=>{const e=document.getElementById('kfp-status');if(e)e.textContent=t||'';};
   const adminOn=()=>{const a=document.getElementById('dashboard');if(!a)return false;const st=getComputedStyle(a);return !a.classList.contains('hide')&&st.display!=='none'&&st.visibility!=='hidden'&&a.getBoundingClientRect().width>0&&a.getBoundingClientRect().height>0;};
-  function visibility(){btn.style.display='none';if(adminOn())dialog.style.display='none';}
+  function visibility(){btn.style.display='block';}
   new MutationObserver(visibility).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
   visibility();
   async function rows(){
