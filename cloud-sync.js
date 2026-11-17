@@ -1378,7 +1378,7 @@
   `;
   document.head.appendChild(css);
   const btn=document.createElement('button');
-  btn.id='kandy-folder-pdf-v2';btn.type='button';btn.textContent='⇧ Share Tile Folder PDF';
+  btn.id='kandy-folder-pdf-v2';btn.type='button';btn.textContent='⇧ Export PDF';
   const dialog=document.createElement('div');
   dialog.id='kandy-folder-pdf-dialog';
   dialog.innerHTML='<div class="kfp-card" role="dialog" aria-modal="true"><h2>Share Tile Folder PDF</h2><p>Select a folder. All tile photos and available item details will be included in one PDF.</p><select id="kfp-folder"><option value="">Loading folders...</option></select><button class="primary" id="kfp-share" type="button">Create PDF & Share</button><p id="kfp-status" aria-live="polite"></p><button id="kfp-close" type="button">Close</button></div>';
@@ -1386,7 +1386,7 @@
   btn.style.display='block';
   const status=t=>{const e=document.getElementById('kfp-status');if(e)e.textContent=t||'';};
   const adminOn=()=>{const a=document.getElementById('dashboard');if(!a)return false;const st=getComputedStyle(a);return !a.classList.contains('hide')&&st.display!=='none'&&st.visibility!=='hidden'&&a.getBoundingClientRect().width>0&&a.getBoundingClientRect().height>0;};
-  function visibility(){btn.style.display='block';}
+  function visibility(){const isAdmin=adminOn();btn.style.display=isAdmin?'none':'block';if(isAdmin)dialog.style.display='none';}
   new MutationObserver(visibility).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
   visibility();
   async function rows(){
