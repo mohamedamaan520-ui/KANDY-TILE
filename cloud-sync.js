@@ -1441,29 +1441,28 @@
     const blob=await res.blob(),object=URL.createObjectURL(blob);
     try{const img=new Image();img.src=object;await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);return c.toDataURL('image/jpeg',0.9);}finally{URL.revokeObjectURL(object);}
   }
+  const escHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   document.getElementById('kfp-share').addEventListener('click',async()=>{
-    const folder=document.getElementById('kfp-folder').value;if(!folder){status('Please select a folder.');return;}
+    const folder=document.getElementById('kfp-folder').value;
+    if(!folder){status('Please select a folder.');return;}
     const button=document.getElementById('kfp-share');button.disabled=true;
+    const printWindow=window.open('about:blank','_blank');
+    if(!printWindow){status('Please allow pop-ups for this website and try again.');button.disabled=false;return;}
     try{
       status('Loading tile details...');const all=await rows();const items=all.filter(x=>x.folder===folder);
       if(!items.length)throw new Error('No tile items found in this folder.');
-      await loadPdf();const pdf=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      let pages='';
       for(let i=0;i<items.length;i++){
-        if(i)pdf.addPage();
-        const item=items[i];pdf.setFillColor(7,31,48);pdf.rect(0,0,210,297,'F');
-        pdf.setTextColor(235,249,255);pdf.setFontSize(23);pdf.text('KANDY TILE',14,20);
-        pdf.setFontSize(14);pdf.text(folder,14,30);
-        pdf.setTextColor(174,216,230);pdf.setFontSize(10);pdf.text('REFLECT YOUR STYLE  |  '+(i+1)+' / '+items.length,14,38);
-        if(item.image_path){status('Adding photo '+(i+1)+' of '+items.length+'...');const data=await photoData(item.image_path);const p=pdf.getImageProperties(data);const maxW=180,maxH=180,scale=Math.min(maxW/p.width,maxH/p.height);const w=p.width*scale,h=p.height*scale;pdf.addImage(data,'JPEG',(210-w)/2,48+(180-h)/2,w,h,undefined,'FAST');}
-        pdf.setTextColor(245,251,255);pdf.setFontSize(14);let y=245;
+        const item=items[i];status('Preparing page '+(i+1)+' of '+items.length+'...');
+        let photo='';
+        if(item.image_path){const data=await photoData(item.image_path);photo='<img class="photo" src="'+data+'" alt="Tile photo">';}
         const details=[item.tile_number?'Tile Number: '+item.tile_number:'',item.product_code?'Product Code: '+item.product_code:'','Folder: '+folder].filter(Boolean);
-        details.forEach(line=>{pdf.text(pdf.splitTextToSize(line,180),14,y);y+=9;});
+        pages+='<section class="page"><header><h1>KANDY TILE</h1><h2>'+escHtml(folder)+'</h2><p>REFLECT YOUR STYLE | '+(i+1)+' / '+items.length+'</p></header>'+photo+'<div class="details">'+details.map(x=>'<p>'+escHtml(x)+'</p>').join('')+'</div></section>';
       }
-      const safe=folder.replace(/[^a-z0-9-_]+/gi,'-');
-      const file=new File([pdf.output('blob')],'KANDY-TILE-'+safe+'.pdf',{type:'application/pdf'});
-      if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){status('Opening share options...');await navigator.share({title:'KANDY TILE - '+folder,text:'Tile folder catalogue PDF',files:[file]});status('PDF share completed.');}
-      else{const u=URL.createObjectURL(file),a=document.createElement('a');a.href=u;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(u),2000);status('PDF downloaded. Attach this PDF in WhatsApp.');}
-    }catch(e){if(e.name==='AbortError')status('Share cancelled.');else{status(e.message||'PDF creation failed.');console.error('KANDY folder PDF:',e);}}
+      const html='<!doctype html><html><head><meta charset="utf-8"><title>KANDY TILE - '+escHtml(folder)+'</title><style>*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#fff;color:#102f43}.page{height:297mm;width:210mm;padding:14mm;page-break-after:always;break-after:page;position:relative}.page:last-child{page-break-after:auto;break-after:auto}header{border-bottom:2px solid #087f9f;padding-bottom:5mm}h1{font-size:25pt;margin:0 0 3mm;color:#075b78}h2{font-size:16pt;margin:0 0 2mm}header p{font-size:10pt;color:#456;margin:0}.photo{display:block;max-width:100%;width:auto;height:auto;max-height:190mm;object-fit:contain;margin:8mm auto}.details{position:absolute;bottom:18mm;left:14mm;right:14mm;font-size:12pt;border-top:1px solid #abc;padding-top:4mm}.details p{margin:2mm 0}@page{size:A4;margin:0}@media screen{body{background:#ddd}.page{margin:10mm auto;background:white;box-shadow:0 2px 10px #999}}@media print{.page{margin:0;box-shadow:none}}</style></head><body>'+pages+'<script>window.onload=()=>{setTimeout(()=>window.print(),700)};<\/script></body></html>';
+      printWindow.document.open();printWindow.document.write(html);printWindow.document.close();
+      status('Print window opened. Choose Save as PDF to create your PDF.');
+    }catch(e){printWindow.close();status(e.message||'Export failed.');console.error('KANDY folder PDF:',e);}
     finally{button.disabled=false;}
-  });
+  });;
 })();
