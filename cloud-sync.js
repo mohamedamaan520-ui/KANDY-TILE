@@ -1531,8 +1531,8 @@
       color: #f3f4f6;
     }
     #kandy-theme-switch {
-      position: static; display: inline-flex; align-items: center; justify-content: center;
-      flex: 0 0 auto; margin: 0 10px; vertical-align: middle; z-index: 99999;
+      position: relative; display: inline-flex; align-items: center; justify-content: center;
+      flex: 0 0 auto; margin: 0 8px; vertical-align: middle; z-index: 20;
       border: 1px solid rgba(100,116,139,.35); border-radius: 999px;
       padding: 10px 15px; min-height: 42px;
       background: #ffffff; color: #172033;
@@ -1574,15 +1574,20 @@
   });
 
   function placeThemeButton() {
-    const controls = Array.from(document.querySelectorAll('a,button,[role="button"]'));
-    const share = controls.find(el => /share\\s*catalogue/i.test((el.innerText || el.textContent || '').trim()));
-    const admin = controls.find(el => /^admin$/i.test((el.innerText || el.textContent || '').trim()));
-    if (share && admin && share.parentElement === admin.parentElement) {
-      admin.parentElement.insertBefore(button, admin);
+    const all = Array.from(document.querySelectorAll('a,button,[role="button"],div,span'));
+    const visible = el => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+    const share = all
+      .filter(el => visible(el) && /share\\s*catalogue/i.test((el.innerText || el.textContent || '').trim()))
+      .sort((x,y) => (x.innerText || x.textContent || '').length - (y.innerText || y.textContent || '').length)[0];
+    const admin = all
+      .filter(el => visible(el) && /^admin$/i.test((el.innerText || el.textContent || '').trim()))
+      .sort((x,y) => (x.innerText || x.textContent || '').length - (y.innerText || y.textContent || '').length)[0];
+    if (share && share.parentElement) {
+      share.insertAdjacentElement('afterend', button);
       return true;
     }
-    if (share && share.parentElement) {
-      share.parentElement.insertBefore(button, share.nextSibling);
+    if (admin && admin.parentElement) {
+      admin.insertAdjacentElement('beforebegin', button);
       return true;
     }
     return false;
@@ -1597,12 +1602,14 @@
     try { localStorage.setItem('kandy-public-theme', dark ? 'dark' : 'light'); } catch (_) {}
     paint();
   });
-  if (!placeThemeButton()) document.body.appendChild(button);
   paint();
-  // Header controls can be rendered after this script; relocate the switch when they appear.
-  const headerObserver = new MutationObserver(() => {
-    if (button.parentElement === document.body) placeThemeButton();
-  });
+  // Keep the switch between Share Catalogue and Admin, including when header is rendered late.
+  const tryPlaceButton = () => {
+    if (placeThemeButton()) return true;
+    return false;
+  };
+  tryPlaceButton();
+  const headerObserver = new MutationObserver(() => { tryPlaceButton(); });
   headerObserver.observe(document.body, { childList: true, subtree: true });
 })();
 
