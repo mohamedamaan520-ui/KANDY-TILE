@@ -1466,3 +1466,49 @@
     finally{button.disabled=false;}
   });;
 })();
+
+
+/* Place the public REFLECT YOUR STYLE tagline directly below and centered with the KANDY TILE logo. */
+(function kandyLogoCenteredTagline(){
+  if (window.__kandyLogoCenteredTaglineV1) return;
+  window.__kandyLogoCenteredTaglineV1 = true;
+  const STYLE_ID = 'kandy-logo-tagline-center-style';
+  if (!document.getElementById(STYLE_ID)) {
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = '.kandy-logo-tagline-wrap{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;text-align:center!important;width:max-content!important;max-width:100%!important}.kandy-logo-tagline-wrap .kandy-logo-tagline{display:block!important;margin:0!important;padding:0!important;text-align:center!important;line-height:1.2!important;font-size:clamp(10px,1.4vw,13px)!important;font-weight:700!important;letter-spacing:.12em!important;white-space:nowrap!important}';
+    document.head.appendChild(style);
+  }
+  function arrange(){
+    const candidates = Array.from(document.querySelectorAll('img,[class*="logo"],[class*="brand"]')).filter(el => {
+      if (el.closest('#kandy-admin-logo-style') || el.classList.contains('kandy-admin-brand') || el.closest('.kandy-admin-brand')) return false;
+      const label = [el.getAttribute('alt')||'',el.getAttribute('title')||'',el.getAttribute('aria-label')||'',el.textContent||''].join(' ').toUpperCase();
+      const marker = ((el.id||'')+' '+(typeof el.className==='string'?el.className:'')).toLowerCase();
+      return (el.tagName==='IMG' && /KANDY\\s*TILE/.test(label)) || (/logo|brand/.test(marker) && /KANDY\\s*TILE/.test(label));
+    });
+    const logo = candidates.find(el => el.getClientRects().length && !el.closest('#kandy-folder-pdf-dialog')) || candidates[0];
+    if (!logo || logo.closest('.kandy-logo-tagline-wrap')) return;
+    const tagline = Array.from(document.querySelectorAll('body *')).find(el =>
+      el.children.length===0 && /REFLECT YOUR STYLE/i.test(el.textContent||'') &&
+      !el.closest('#kandy-folder-pdf-dialog') && !el.closest('.kandy-admin-brand')
+    );
+    const anchor = logo.closest('a') || logo;
+    const parent = anchor.parentElement;
+    if (!parent) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'kandy-logo-tagline-wrap';
+    parent.insertBefore(wrap, anchor);
+    wrap.appendChild(anchor);
+    if (tagline && tagline !== anchor && !anchor.contains(tagline)) {
+      tagline.classList.add('kandy-logo-tagline');
+      wrap.appendChild(tagline);
+    } else {
+      const label = document.createElement('div');
+      label.className = 'kandy-logo-tagline';
+      label.textContent = 'REFLECT YOUR STYLE';
+      wrap.appendChild(label);
+    }
+  }
+  arrange();
+  new MutationObserver(arrange).observe(document.body, {childList:true,subtree:true});
+})();
