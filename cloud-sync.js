@@ -1055,88 +1055,138 @@
 })();
 
 
-// KANDY TILE collection cover slideshow: change catalogue photos every 3 seconds.
-(function kandyTopPhotoSlideshow() {
-  if (window.__kandyTopPhotoSlideshowV1) return;
-  window.__kandyTopPhotoSlideshowV1 = true;
-  let timer = null, current = 0, hero = null, originalSrc = '';
+// KANDY TILE collection cover slideshow — robust image targeting + 3-second rotation.
+(function kandyTopPhotoSlideshowV2() {
+  if (window.__kandyTopPhotoSlideshowV2) return;
+  window.__kandyTopPhotoSlideshowV2 = true;
+
+  const STORAGE_BASE = 'https://dthepmehttlimzwgvotk.supabase.co/storage/v1/object/public/catalog-photos/';
+  const SUPABASE_URL = 'https://dthepmehttlimzwgvotk.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_8SHCyJX1eetAhZvMOR9dFg_lEltHI15';
+  let photos = [], current = -1, target = null, timer = null, loading = false;
+
   const style = document.createElement('style');
-  style.id = 'kandy-top-slideshow-style';
-  style.textContent = `
-    .kandy-top-slide-image { transition: opacity .65s ease-in-out !important; }
-    .kandy-top-slide-image.kandy-slide-fade { opacity: .12 !important; }
-  `;
+  style.textContent = '.kandy-cover-slideshow{transition:opacity .35s ease!important}.kandy-cover-slideshow.kandy-cover-changing{opacity:.08!important}';
   document.head.appendChild(style);
 
-  function publicPage() {
-    const login = document.getElementById('login-panel');
+  function photoUrl(path) {
+    return STORAGE_BASE + String(path || '').split('/').map(encodeURIComponent).join('/');
+  }
+
+  async function loadPhotos() {
+    if (loading) return;
+    loading = true;
+    try {
+      const response = await fetch(SUPABASE_URL + '/rest/v1/catalog_tiles?select=image_path,tile_number,product_code&order=sort_order.asc', {
+        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+      });
+      if (response.ok) {
+        const rows = await response.json();
+        photos = rows.filter(row => row.image_path).map(row => ({
+          src: photoUrl(row.image_path),
+          label: [row.tile_number, row.product_code].filter(Boolean).join(' - ')
+        }));
+      }
+    } catch (e) {
+      console.warn('KANDY TILE slideshow could not load cloud photos:', e);
+    } finally {
+      loading = false;
+    }
+    if (photos.length < 2 && typeof tiles !== 'undefined' && Array.isArray(tiles)) {
+      photos = tiles.filter(t => t && typeof t.image === 'string' && t.image)
+        .map(t => ({src:t.image,label:[t.number,t.code].filter(Boolean).join(' - ')}));
+    }
+  }
+
+  function isAdminView() {
     const dashboard = document.getElementById('dashboard');
-    const shown = el => el && !el.classList.contains('hide') && getComputedStyle(el).display !== 'none';
-    return !(shown(login) || shown(dashboard));
+    return !!(dashboard && !dashboard.classList.contains('hide') && getComputedStyle(dashboard).display !== 'none');
   }
-  function chooseHero() {
-    const candidates = [...document.querySelectorAll('img')].filter(img => {
-      if (!img.complete || !img.naturalWidth) return false;
-      const r = img.getBoundingClientRect();
-      const cs = getComputedStyle(img);
-      return r.top >= -80 && r.top < 750 && r.width >= 250 && r.height >= 110 &&
-        cs.display !== 'none' && cs.visibility !== 'hidden' &&
-        !img.closest('#dashboard,#login-panel,#kandy-share-modal,#kandy-tile-format-modal');
-    }).sort((a,b) => {
-      const score = img => {
-        const src = img.currentSrc || img.src || '';
-        const alt = (img.alt || '').toLowerCase();
-        return (alt.includes('tile collection cover') || src.includes('/catalog-photos/tiles/GLOSS-0.webp')) ? 1000000 : 0;
-      };
-      const priority = score(b) - score(a);
-      if (priority) return priority;
-      const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();
-      return ar.top-br.top || br.width*br.height-ar.width*ar.height;
+
+  function findCover() {
+    // Prefer the exact collection-cover image the user identified.
+    const all = [...document.querySelectorAll('img')];
+    let found = all.find(img => (img.currentSrc || img.src || '').includes('/tiles/GLOSS-0.webp'));
+    if (!found) found = all.find(img => (img.alt || '').toLowerCase().includes('tile collection cover'));
+    if (!found) {
+      const candidates = all.filter(img => {
+        const r=img.getBoundingClientRect(), cs=getComputedStyle(img);
+        return r.top >= -80 && r.top < 750 && r.width >= 250 && r.height >= 110 &&
+          img.complete && img.naturalWidth && cs.display !== 'none' && cs.visibility !== 'hidden' &&
+          !img.closest('#dashboard,#login-panel,#kandy-share-modal,#kandy-tile-format-modal');
+      });
+      candidates.sort((a,b) => {
+        const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();
+        return ar.top-br.top || br.width*br.height-ar.width*ar.height;
+      });
+      found=candidates[0] || null;
+    }
+    if (found) return {el:found, type:'img'};
+    // Also support a CSS-background cover image.
+    const backgrounds=[...document.querySelectorAll('body *')].filter(el => {
+      const bg=getComputedStyle(el).backgroundImage;
+      const r=el.getBoundingClientRect();
+      return bg.includes('GLOSS-0.webp') && r.width>=250 && r.height>=110;
     });
-    return candidates[0] || null;
+    if (backgrounds[0]) return {el:backgrounds[0],type:'background'};
+    return null;
   }
-  function cataloguePhotos() {
-    if (typeof tiles === 'undefined' || !Array.isArray(tiles)) return [];
-    return tiles.filter(t => t && typeof t.image === 'string' && /^https?:|^data:image\\//i.test(t.image));
+
+  function currentSrc() {
+    if (!target) return '';
+    return target.type==='img' ? (target.el.currentSrc || target.el.src || '') : getComputedStyle(target.el).backgroundImage;
   }
-  function start() {
-    if (!publicPage()) { if (timer) clearInterval(timer); timer=null; return; }
-    const photos = cataloguePhotos();
+
+  function paint(item) {
+    if (!target || !target.el.isConnected) return;
+    const el=target.el;
+    el.classList.add('kandy-cover-slideshow','kandy-cover-changing');
+    setTimeout(() => {
+      if (!target || !el.isConnected) return;
+      if (target.type==='img') {
+        el.src=item.src;
+        el.removeAttribute('srcset');
+        el.alt=item.label || 'KANDY TILE collection';
+      } else {
+        el.style.backgroundImage='url("' + item.src + '")';
+      }
+      const reveal=()=>el.classList.remove('kandy-cover-changing');
+      if (target.type==='img') {
+        el.addEventListener('load',reveal,{once:true});
+        el.addEventListener('error',reveal,{once:true});
+      }
+      setTimeout(reveal,800);
+    },180);
+  }
+
+  async function start() {
+    if (isAdminView()) { if(timer) clearInterval(timer); timer=null; return; }
+    if (photos.length < 2) await loadPhotos();
     if (photos.length < 2) return;
-    if (!hero || !hero.isConnected) {
-      hero = chooseHero();
-      if (!hero) return;
-      originalSrc = hero.currentSrc || hero.src || '';
-      hero.classList.add('kandy-top-slide-image');
-      current = Math.max(0, photos.findIndex(t => t.image === originalSrc));
+    if (!target || !target.el.isConnected) {
+      target=findCover();
+      if (!target) return;
+      const src=currentSrc();
+      current=photos.findIndex(p => src.includes(p.src) || p.src.includes('GLOSS-0.webp'));
+      if (current < 0) current=0;
     }
     if (timer) return;
-    timer = setInterval(() => {
-      if (!publicPage() || !hero || !hero.isConnected) {
-        clearInterval(timer); timer=null; hero=null; return;
+    timer=setInterval(() => {
+      if (!target || !target.el.isConnected || isAdminView()) {
+        clearInterval(timer); timer=null; target=null; return;
       }
-      const latest = cataloguePhotos();
-      if (latest.length < 2) return;
-      current = (current + 1) % latest.length;
-      hero.classList.add('kandy-slide-fade');
-      setTimeout(() => {
-        if (!hero || !hero.isConnected) return;
-        hero.src = latest[current].image;
-        hero.removeAttribute('srcset');
-        hero.alt = [latest[current].number, latest[current].code].filter(Boolean).join(' - ') || 'KANDY TILE design';
-        const reveal = () => hero && hero.classList.remove('kandy-slide-fade');
-        hero.addEventListener('load', reveal, {once:true});
-        setTimeout(reveal, 900);
-      }, 320);
-    }, 3000);
+      current=(current+1)%photos.length;
+      paint(photos[current]);
+    },3000);
   }
-  const boot = () => { if (publicPage()) start(); };
-  document.addEventListener('DOMContentLoaded', boot);
-  setInterval(boot, 1500);
-  new MutationObserver(() => { if (!timer) boot(); }).observe(document.body,{childList:true,subtree:true});
+
+  const boot=()=>{ start(); };
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true});
+  else boot();
+  setInterval(()=>{ if(!timer) boot(); },1200);
+  new MutationObserver(()=>{if(!timer) boot();}).observe(document.body,{childList:true,subtree:true});
 })();
-
-
+ 
 // KANDY TILE installable app branding (favicon + home-screen/desktop shortcut icon)
 (function kandyTileAppBranding(){
   function addLink(rel, href, extra){
