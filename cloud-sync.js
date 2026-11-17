@@ -1407,7 +1407,7 @@
   },true);
   const status=t=>{const e=document.getElementById('kfp-status');if(e)e.textContent=t||'';};
   const adminOn=()=>{const a=document.getElementById('dashboard');if(!a)return false;const st=getComputedStyle(a);return !a.classList.contains('hide')&&st.display!=='none'&&st.visibility!=='hidden'&&a.getBoundingClientRect().width>0&&a.getBoundingClientRect().height>0;};
-  function visibility(){btn.style.display=adminOn()?'none':'block';if(adminOn())dialog.style.display='none';}
+  function visibility(){btn.style.display='none';if(adminOn())dialog.style.display='none';}
   new MutationObserver(visibility).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
   visibility();
   async function rows(){
