@@ -80,6 +80,7 @@
     const cloudHasCatalogue = await loadCloudCatalogue();
     $('cloud-seed').style.display = cloudHasCatalogue ? 'none' : 'inline-block';
     if (typeof renderAdmin === 'function') renderAdmin();
+    window.dispatchEvent(new Event('kandy-category-admin-ready'));
     if (typeof view === 'function') view();
     subscribeRealtime();
   }
@@ -1234,7 +1235,7 @@
   if(!(q[0].data||[]).some(function(x){return x.collection==='Tiles';})){var z=await db.from('catalog_categories').insert({collection:'Tiles',name:'',sort_order:0});if(z.error&&z.error.code!=='23505')throw z.error;}
  }
  function createAdmin(){
-  var dash=document.getElementById('dashboard');if(!dash||document.getElementById('kandy-category-admin'))return;
+  var dash=document.getElementById('dashboard');var host=dash&&(dash.querySelector('.admin-panel')||dash);if(!host||document.getElementById('kandy-category-admin'))return;
   panel=node('section','admin-panel');panel.id='kandy-category-admin';panel.style.cssText='margin-top:18px;padding:18px;border:1px solid rgba(180,225,240,.3);border-radius:16px';
   var h=node('h2',null,'Manage Categories');panel.appendChild(h);
   panel.appendChild(node('p','notice','New option only: Category → Folder → Items. Your existing catalogue folders are automatically placed under Tiles.'));
@@ -1242,7 +1243,7 @@
   var input=node('input');input.id='kcat-new';input.placeholder='New category name (e.g. Commode)';input.required=true;input.maxLength=60;input.style.flex='1';
   var add=node('button',null,'＋ Add Category');add.type='submit';add.className='primary';form.append(input,add);panel.appendChild(form);
   panel.appendChild(node('div',null,''));var st=node('div');st.id='kcat-status';st.style.minHeight='22px';panel.appendChild(st);
-  var list=node('div');list.id='kcat-list';panel.appendChild(list);dash.appendChild(panel);
+  var list=node('div');list.id='kcat-list';panel.appendChild(list);host.appendChild(panel);
   form.addEventListener('submit',async function(e){e.preventDefault();var name=input.value.trim();if(!name)return;try{await load();if(cats.some(function(c){return c.name.toLowerCase()===name.toLowerCase();}))throw Error('Category already exists.');var r=await db.from('catalog_categories').insert({collection:name,name:'',sort_order:9999});if(r.error)throw r.error;input.value='';status('Category added. Assign folders below.');await drawAdmin();}catch(err){status(err.message||String(err),true);}});
   drawAdmin().catch(function(e){status(e.message||String(e),true);});
  }
@@ -1291,5 +1292,6 @@
   document.getElementById('kc-large-close').addEventListener('click',function(){document.getElementById('kc-large').style.display='none';});
  }
  function refresh(){if(shown(document.getElementById('dashboard')))createAdmin();else if(!admin())createPublic();else{var p=document.getElementById('kandy-category-admin');if(p)p.remove();panel=null;var b=document.getElementById('kandy-category-open');if(b)b.remove();}}
+ window.addEventListener('kandy-category-admin-ready',createAdmin);
  new MutationObserver(refresh).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});refresh();
 })();
