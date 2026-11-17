@@ -775,7 +775,7 @@
   const catalogueBtn = document.createElement('button');
   catalogueBtn.id = 'kandy-share-catalogue';
   catalogueBtn.type = 'button';
-  catalogueBtn.textContent = '⇧ Share Catalogue';
+  catalogueBtn.textContent = '⇧ Share Folder PDF';
   const tileBtn = document.createElement('button');
   tileBtn.id = 'kandy-share-tile';
   tileBtn.type = 'button';
@@ -786,8 +786,8 @@
   modal.id = 'kandy-share-modal';
   modal.innerHTML = `
     <div class="ks-card" role="dialog" aria-modal="true" aria-labelledby="ks-title">
-      <h2 id="ks-title">Share Catalogue</h2>
-      <p>Select a folder. A PDF will be created with tile photos and product details.</p>
+      <h2 id="ks-title">Share Tile Folder as PDF</h2>
+      <p>Choose a tile folder. All photos and available item details in that folder will be combined into one PDF for your customer. PDF only.</p>
       <select id="ks-folder" aria-label="Choose catalogue folder"></select>
       <button id="ks-create" class="primary" type="button">Create PDF & Share</button>
       <p id="kandy-share-status" aria-live="polite"></p>
@@ -834,7 +834,7 @@
     const select = document.getElementById('ks-folder');
     select.innerHTML = '';
     const all = document.createElement('option');
-    all.value = '__ALL__'; all.textContent = 'All Collections';
+    all.value = '__ALL__'; all.textContent = 'All Tile Folders (one PDF)';
     select.appendChild(all);
     getFolders().forEach(name => {
       const option = document.createElement('option');
@@ -1007,7 +1007,7 @@
       pdf.setTextColor(235,249,255); pdf.setFontSize(22); pdf.text('KANDY TILE',14,20);
       pdf.setFontSize(15); pdf.text(heading,14,30);
       pdf.setFontSize(9); pdf.setTextColor(174,216,230);
-      pdf.text('REFLECT YOUR DREAM  |  ' + items.length + ' Products',14,37);
+      pdf.text('REFLECT YOUR STYLE  |  ' + items.length + ' Products',14,37);
       let y = 47;
       for (let i=0;i<items.length;i++) {
         if (y > 245) {
@@ -1019,7 +1019,11 @@
         try {
           const data = await imageData(item.image);
           const format = data.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-          pdf.addImage(data,format,17,y+6,82,76,undefined,'FAST');
+          const props = pdf.getImageProperties(data);
+          const maxW = 82, maxH = 76;
+          const scale = Math.min(maxW / props.width, maxH / props.height);
+          const imgW = props.width * scale, imgH = props.height * scale;
+          pdf.addImage(data,format,17+(maxW-imgW)/2,y+6+(maxH-imgH)/2,imgW,imgH,undefined,'FAST');
         } catch (e) {
           pdf.setTextColor(180,210,220); pdf.setFontSize(10);
           pdf.text('Product photo unavailable',20,y+42);
@@ -1030,9 +1034,14 @@
         const lines = [
           item.number ? 'Tile Number: ' + item.number : '',
           item.code ? 'Product Code: ' + item.code : '',
-          item.folder ? 'Collection: ' + item.folder : ''
+          item.folder ? 'Folder: ' + item.folder : ''
         ].filter(Boolean);
-        lines.forEach((line,j) => pdf.text(pdf.splitTextToSize(line,80),108,y+32+j*12));
+        let detailY = y+32;
+        lines.forEach(line => {
+          const wrapped = pdf.splitTextToSize(line,80);
+          pdf.text(wrapped,108,detailY);
+          detailY += wrapped.length * 5 + 3;
+        });
         y += 113;
       }
       const safe = heading.replace(/[^a-z0-9-_]+/gi,'-');
