@@ -1543,6 +1543,33 @@
   button.id = 'kandy-theme-switch';
   button.type = 'button';
   button.setAttribute('aria-label', 'Switch between light and dark mode');
+  // Preserve the exact KANDY TILE wordmark colours in both themes:
+  // KANDY stays black and TILE stays red, independent of page theme.
+  function lockKandyWordmarkColours() {
+    const candidates = Array.from(document.querySelectorAll('header *, nav *, h1, h2, [id*="logo" i], [class*="logo" i], [id*="brand" i], [class*="brand" i]'));
+    candidates.forEach(el => {
+      if (!el || el.closest('#kandy-theme-switch')) return;
+      const ownText = Array.from(el.childNodes)
+        .filter(n => n.nodeType === Node.TEXT_NODE)
+        .map(n => n.textContent).join(' ').replace(/\\s+/g, ' ').trim();
+      if (!el.children.length && /^(KANDY|TILE)$/i.test((el.textContent || '').trim())) {
+        const word = (el.textContent || '').trim().toUpperCase();
+        el.style.setProperty('color', word === 'KANDY' ? '#000000' : '#e32636', 'important');
+      } else if (!el.children.length && /^KANDY\\s+TILE\\.?$/i.test((el.textContent || '').trim())) {
+        const match = (el.textContent || '').trim().match(/^(KANDY)(\\s+)(TILE\\.?)$/i);
+        if (match) {
+          const black = document.createElement('span');
+          black.textContent = match[1];
+          black.style.setProperty('color', '#000000', 'important');
+          const red = document.createElement('span');
+          red.textContent = match[3];
+          red.style.setProperty('color', '#e32636', 'important');
+          el.replaceChildren(black, document.createTextNode(match[2]), red);
+        }
+      }
+    });
+  }
+  lockKandyWordmarkColours();
   // Capture the original brand/logo colours before applying either theme.
   const logoNodes = Array.from(document.querySelectorAll('[id*="logo" i],[class*="logo" i],[id*="brand" i],[class*="brand" i]'));
   const brandTextNodes = Array.from(document.querySelectorAll('header *, nav *, h1, h2')).filter(el =>
@@ -1589,6 +1616,7 @@
     return false;
   }
   function paint() {
+    lockKandyWordmarkColours();
     document.body.classList.toggle('kandy-theme-dark', dark);
     button.textContent = dark ? '☀ Light Mode' : '🌙 Dark Mode';
     button.setAttribute('aria-pressed', String(dark));
