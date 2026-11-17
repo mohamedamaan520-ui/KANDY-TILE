@@ -1386,7 +1386,7 @@
   /* Show Export beside the selected collection chip, not as a floating global control. */
   btn.style.display='none';
   let inlineExport=null, selectedFolderForExport='';
-  function folderLabel(el){return (el.innerText||el.textContent||'').replace(/\\(\\s*\\d+\\s*\\)/g,'').replace(/\\s+/g,' ').trim();}
+  function folderLabel(el){return String(el.innerText||el.textContent||'').split('(')[0].trim();}
   function showInlineExport(chip,folder){
     if(inlineExport)inlineExport.remove();
     inlineExport=document.createElement('button');inlineExport.type='button';inlineExport.textContent='⇧ Export PDF';
