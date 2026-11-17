@@ -1502,3 +1502,66 @@
   arrange();
   new MutationObserver(arrange).observe(document.body,{childList:true,subtree:true});
 })();
+
+
+// KANDY TILE public appearance: white background with a visitor theme switch.
+(function addKandyThemeSwitch() {
+  if (window.__kandyThemeSwitchReady) return;
+  window.__kandyThemeSwitchReady = true;
+  const style = document.createElement('style');
+  style.id = 'kandy-public-theme-style';
+  style.textContent = `
+    body:not(.water-glass-login-active) {
+      background: #ffffff !important;
+      background-color: #ffffff !important;
+      color: #202938;
+      transition: background-color .2s ease, color .2s ease;
+    }
+    body.kandy-theme-dark:not(.water-glass-login-active) {
+      background: #111827 !important;
+      background-color: #111827 !important;
+      color: #f3f4f6 !important;
+    }
+    body.kandy-theme-dark:not(.water-glass-login-active) main,
+    body.kandy-theme-dark:not(.water-glass-login-active) section,
+    body.kandy-theme-dark:not(.water-glass-login-active) .container,
+    body.kandy-theme-dark:not(.water-glass-login-active) .card,
+    body.kandy-theme-dark:not(.water-glass-login-active) .tile-card,
+    body.kandy-theme-dark:not(.water-glass-login-active) .folder-card {
+      color: #f3f4f6;
+    }
+    #kandy-theme-switch {
+      position: fixed; right: 16px; bottom: 16px; z-index: 99999;
+      border: 1px solid rgba(100,116,139,.35); border-radius: 999px;
+      padding: 10px 15px; min-height: 42px;
+      background: #ffffff; color: #172033;
+      box-shadow: 0 5px 20px rgba(0,0,0,.16);
+      font: 600 13px/1.2 Arial,sans-serif; cursor: pointer;
+    }
+    body.kandy-theme-dark #kandy-theme-switch {
+      background: #263449; color: #ffffff; border-color: #64748b;
+    }
+    @media(max-width:600px) {
+      #kandy-theme-switch { right: 10px; bottom: 10px; padding: 9px 12px; }
+    }
+  `;
+  document.head.appendChild(style);
+  let dark = false;
+  try { dark = localStorage.getItem('kandy-public-theme') === 'dark'; } catch (_) {}
+  const button = document.createElement('button');
+  button.id = 'kandy-theme-switch';
+  button.type = 'button';
+  button.setAttribute('aria-label', 'Switch between light and dark mode');
+  function paint() {
+    document.body.classList.toggle('kandy-theme-dark', dark);
+    button.textContent = dark ? '☀ Light Mode' : '🌙 Dark Mode';
+    button.setAttribute('aria-pressed', String(dark));
+  }
+  button.addEventListener('click', () => {
+    dark = !dark;
+    try { localStorage.setItem('kandy-public-theme', dark ? 'dark' : 'light'); } catch (_) {}
+    paint();
+  });
+  document.body.appendChild(button);
+  paint();
+})();
