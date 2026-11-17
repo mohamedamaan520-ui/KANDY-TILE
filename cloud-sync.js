@@ -1055,7 +1055,7 @@
 })();
 
 
-// KANDY TILE public hero slideshow: rotate catalogue photos every 8 seconds.
+// KANDY TILE collection cover slideshow: change catalogue photos every 3 seconds.
 (function kandyTopPhotoSlideshow() {
   if (window.__kandyTopPhotoSlideshowV1) return;
   window.__kandyTopPhotoSlideshowV1 = true;
@@ -1083,6 +1083,13 @@
         cs.display !== 'none' && cs.visibility !== 'hidden' &&
         !img.closest('#dashboard,#login-panel,#kandy-share-modal,#kandy-tile-format-modal');
     }).sort((a,b) => {
+      const score = img => {
+        const src = img.currentSrc || img.src || '';
+        const alt = (img.alt || '').toLowerCase();
+        return (alt.includes('tile collection cover') || src.includes('/catalog-photos/tiles/GLOSS-0.webp')) ? 1000000 : 0;
+      };
+      const priority = score(b) - score(a);
+      if (priority) return priority;
       const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();
       return ar.top-br.top || br.width*br.height-ar.width*ar.height;
     });
@@ -1121,7 +1128,7 @@
         hero.addEventListener('load', reveal, {once:true});
         setTimeout(reveal, 900);
       }, 320);
-    }, 8000);
+    }, 3000);
   }
   const boot = () => { if (publicPage()) start(); };
   document.addEventListener('DOMContentLoaded', boot);
