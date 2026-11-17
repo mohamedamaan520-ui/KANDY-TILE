@@ -1369,7 +1369,7 @@
   const SUPA_KEY = 'sb_publishable_8SHCyJX1eetAhZvMOR9dFg_lEltHI15';
   const css = document.createElement('style');
   css.textContent = `
-    #kandy-folder-pdf-v2{position:fixed!important;left:16px!important;bottom:76px!important;z-index:2147483000!important;padding:13px 18px!important;border:1px solid #b7e7f1!important;border-radius:999px!important;background:linear-gradient(135deg,#087f9f,#124f78)!important;color:#fff!important;font-weight:800!important;box-shadow:0 8px 28px #001a2b66!important;cursor:pointer!important}
+    #kandy-folder-pdf-v2{position:fixed!important;right:16px!important;bottom:24px!important;z-index:2147483646!important;padding:13px 18px!important;border:1px solid #b7e7f1!important;border-radius:999px!important;background:linear-gradient(135deg,#087f9f,#124f78)!important;color:#fff!important;font-weight:800!important;box-shadow:0 8px 28px #001a2b66!important;cursor:pointer!important}
     #kandy-folder-pdf-dialog{position:fixed;inset:0;z-index:2147483001;background:#061522dd;display:none;align-items:center;justify-content:center;padding:16px}
     #kandy-folder-pdf-dialog .kfp-card{width:min(440px,100%);max-height:85vh;overflow:auto;padding:22px;border:1px solid #8ccbdc;border-radius:18px;background:#102f43;color:#effaff;box-shadow:0 20px 60px #0009}
     #kandy-folder-pdf-dialog h2{margin:0 0 8px}#kandy-folder-pdf-dialog p{color:#c8e4ec}
@@ -1384,7 +1384,7 @@
   dialog.innerHTML='<div class="kfp-card" role="dialog" aria-modal="true"><h2>Share Tile Folder PDF</h2><p>Select a folder. All tile photos and available item details will be included in one PDF.</p><select id="kfp-folder"><option value="">Loading folders...</option></select><button class="primary" id="kfp-share" type="button">Create PDF & Share</button><p id="kfp-status" aria-live="polite"></p><button id="kfp-close" type="button">Close</button></div>';
   document.body.append(btn,dialog);
   const status=t=>{const e=document.getElementById('kfp-status');if(e)e.textContent=t||'';};
-  const adminOn=()=>{const a=document.getElementById('dashboard'),b=document.getElementById('login-panel');const visible=e=>e&&!e.classList.contains('hide')&&getComputedStyle(e).display!=='none';return visible(a)||visible(b);};
+  const adminOn=()=>{const a=document.getElementById('dashboard');if(!a)return false;const st=getComputedStyle(a);return !a.classList.contains('hide')&&st.display!=='none'&&st.visibility!=='hidden'&&a.getBoundingClientRect().width>0&&a.getBoundingClientRect().height>0;};
   function visibility(){btn.style.display=adminOn()?'none':'block';if(adminOn())dialog.style.display='none';}
   new MutationObserver(visibility).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
   visibility();
