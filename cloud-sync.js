@@ -202,9 +202,24 @@
 
   const originalSave = save;
   save = function() {
-    const ok = originalSave();
-    if (isCloudAdmin) { syncCloudCatalogue(); return true; }
-    return ok;
+    if (isCloudAdmin) {
+      try {
+        originalSave();
+      } catch (err) {
+        const quotaError = err && (
+          err.name === 'QuotaExceededError' ||
+          err.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+          err.code === 22 || err.code === 1014 ||
+          /storage.*full|quota.*exceed/i.test(err.message || '')
+        );
+        if (!quotaError) throw err;
+        console.warn('KANDY TILE: browser storage is full; saving the admin changes directly to Supabase instead.');
+        msg('Browser storage is full. Saving this change securely to the cloud...');
+      }
+      syncCloudCatalogue();
+      return true;
+    }
+    return originalSave();
   };
 
   $('logout').onclick = async () => {
