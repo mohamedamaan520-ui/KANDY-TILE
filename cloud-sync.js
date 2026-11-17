@@ -1492,11 +1492,11 @@
   if(logo) (logo.closest('a')||logo).classList.add('kandy-logo-tagline-anchor');
 })();
 
-/* Fixed appearance using CSS only; no observers or polling. */
-(function setKandyFixedPageAppearance(){
-  if(document.getElementById('kandy-fixed-appearance-style')) return;
+/* Customer view stays white; preserve the Admin page's original styling. */
+(function setKandyCustomerWhiteOnly(){
+  if(document.getElementById('kandy-customer-white-style')) return;
   const style=document.createElement('style');
-  style.id='kandy-fixed-appearance-style';
-  style.textContent='body{background:#fff!important;background-color:#fff!important} body:has(#login-panel:not(.hide)),body:has(#dashboard:not(.hide)){background:#111827!important;background-color:#111827!important;color:#f3f4f6} body:has(#login-panel:not(.hide)) #login-panel,body:has(#dashboard:not(.hide)) #dashboard,body:has(#dashboard:not(.hide)) #dashboard .admin-panel,body:has(#dashboard:not(.hide)) #dashboard .panel,body:has(#dashboard:not(.hide)) #dashboard .card,body:has(#dashboard:not(.hide)) #dashboard .stat-card,body:has(#dashboard:not(.hide)) #dashboard .section,body:has(#dashboard:not(.hide)) #dashboard .modal-content,body:has(#dashboard:not(.hide)) #dashboard table,body:has(#dashboard:not(.hide)) #dashboard tr{background-color:#1f2937!important;border-color:#475569!important;color:#f3f4f6} body:has(#login-panel:not(.hide)) #login-panel input,body:has(#dashboard:not(.hide)) #dashboard input:not([type="checkbox"]),body:has(#dashboard:not(.hide)) #dashboard select,body:has(#dashboard:not(.hide)) #dashboard textarea{background:#111827!important;border-color:#64748b!important;color:#f9fafb!important}';
+  style.id='kandy-customer-white-style';
+  style.textContent='body:not(:has(#login-panel:not(.hide))):not(:has(#dashboard:not(.hide))){background:#fff!important;background-color:#fff!important} #kandy-theme-switch{display:none!important}';
   document.head.appendChild(style);
 })();
