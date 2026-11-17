@@ -1504,8 +1504,8 @@
 })();
 
 
-// KANDY TILE fixed customer/admin appearance: customer pages stay white;
-// only the Admin login/dashboard uses the dark interface. No theme toggle.
+// KANDY TILE fixed appearance: customer view white, Admin view dark.
+// Lightweight observers avoid watching every catalogue mutation.
 (function setKandyFixedPageAppearance() {
   if (window.__kandyFixedAppearanceReady) return;
   window.__kandyFixedAppearanceReady = true;
@@ -1513,13 +1513,10 @@
   const style = document.createElement('style');
   style.id = 'kandy-fixed-appearance-style';
   style.textContent = `
-    /* Customer catalogue: always white. */
     body:not(.kandy-admin-area) {
       background: #ffffff !important;
       background-color: #ffffff !important;
     }
-
-    /* Admin login and dashboard only: dark background and panels. */
     body.kandy-admin-area {
       background: #111827 !important;
       background-color: #111827 !important;
@@ -1552,30 +1549,51 @@
       border-color: #64748b;
       color: #f9fafb;
     }
-    body.kandy-admin-area #dashboard .hide { display: none !important; }
   `;
   document.head.appendChild(style);
 
+  let panelObserver = null;
   function updateArea() {
     const login = document.getElementById('login-panel');
     const dashboard = document.getElementById('dashboard');
-    const visible = el => !!el && !el.classList.contains('hide') &&
-      getComputedStyle(el).display !== 'none' &&
-      getComputedStyle(el).visibility !== 'hidden';
+    const visible = el => {
+      if (!el || el.hidden || el.classList.contains('hide')) return false;
+      const css = getComputedStyle(el);
+      return css.display !== 'none' && css.visibility !== 'hidden';
+    };
     const adminPage = visible(login) || visible(dashboard);
     document.body.classList.toggle('kandy-admin-area', adminPage);
-    // Remove any theme state or leftover switch created by an older cached script.
     document.body.classList.remove('kandy-theme-dark');
     const oldSwitch = document.getElementById('kandy-theme-switch');
     if (oldSwitch) oldSwitch.remove();
+
+    if (panelObserver) panelObserver.disconnect();
+    panelObserver = new MutationObserver(updateArea);
+    [login, dashboard].filter(Boolean).forEach(el => {
+      panelObserver.observe(el, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'hidden']
+      });
+    });
   }
 
   updateArea();
-  const observer = new MutationObserver(updateArea);
-  observer.observe(document.body, {
-    subtree: true,
-    childList: true,
-    attributes: true,
-    attributeFilter: ['class', 'style', 'hidden']
+
+  // Only detect insertion/removal of the two Admin panels; ignore catalogue updates.
+  const structureObserver = new MutationObserver(records => {
+    let relevant = false;
+    for (const record of records) {
+      for (const node of [...record.addedNodes, ...record.removedNodes]) {
+        if (node.nodeType !== 1) continue;
+        if (node.id === 'login-panel' || node.id === 'dashboard' ||
+            node.querySelector?.('#login-panel, #dashboard')) {
+          relevant = true;
+          break;
+        }
+      }
+      if (relevant) break;
+    }
+    if (relevant) updateArea();
   });
+  structureObserver.observe(document.body, { childList: true, subtree: true });
 })();
