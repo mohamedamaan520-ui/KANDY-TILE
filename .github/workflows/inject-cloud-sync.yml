@@ -22,15 +22,19 @@ jobs:
           from pathlib import Path
           p = Path("index.html")
           s = p.read_text(encoding="utf-8")
-          import re
-          version = "20261117-export-fix-2"
-          if re.search(r'<script[^>]+src=["\\']cloud-sync\\.js(?:\\?[^"\\']*)?["\\']', s):
-              s = re.sub(r'(<script[^>]+src=["\\'])cloud-sync\\.js(?:\\?[^"\\']*)?(["\\'])', r'\\g<1>cloud-sync.js?v=' + version + r'\\g<2>', s, count=1)
+          version = "20261117-export-fix-3"
+          needle = 'src="cloud-sync.js"'
+          if needle in s:
+              s = s.replace(needle, 'src="cloud-sync.js?v=' + version + '"', 1)
               print("Cloud sync script cache version updated.")
+          elif 'cloud-sync.js?v=' in s:
+              import re
+              s = re.sub(r'src="cloud-sync\\.js(?:\\?[^"]*)?"', 'src="cloud-sync.js?v=' + version + '"', s, count=1)
+              print("Cloud sync script cache version refreshed.")
           else:
               marker = "</script></body></html>"
               if marker not in s:
-                  raise SystemExit("Could not find the safe insertion point in index.html; no changes made.")
+                  raise SystemExit("Could not find safe insertion point in index.html.")
               replacement = '</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="cloud-sync.js?v=' + version + '"></script></body></html>'
               s = s.replace(marker, replacement, 1)
               print("Supabase JS and cloud-sync.js connected.")
