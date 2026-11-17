@@ -203,19 +203,9 @@
   const originalSave = save;
   save = function() {
     if (isCloudAdmin) {
-      try {
-        originalSave();
-      } catch (err) {
-        const quotaError = err && (
-          err.name === 'QuotaExceededError' ||
-          err.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
-          err.code === 22 || err.code === 1014 ||
-          /storage.*full|quota.*exceed/i.test(err.message || '')
-        );
-        if (!quotaError) throw err;
-        console.warn('KANDY TILE: browser storage is full; saving the admin changes directly to Supabase instead.');
-        msg('Browser storage is full. Saving this change securely to the cloud...');
-      }
+      // Cloud Admin edits are persisted to Supabase only. Do not write the
+      // large photo catalogue into localStorage, which can exceed browser quota.
+      msg('Saving changes securely to the cloud...');
       syncCloudCatalogue();
       return true;
     }
