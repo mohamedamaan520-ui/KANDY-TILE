@@ -1315,3 +1315,38 @@
     document.addEventListener('DOMContentLoaded', replaceTagline, { once: true });
   }
 })();
+
+
+/* KANDY TILE logo: return to the catalogue home page when clicked. */
+(function kandyTileLogoHomeLink(){
+  if (window.__kandyTileLogoHomeLinkV1) return;
+  window.__kandyTileLogoHomeLinkV1 = true;
+  const isKandyLogo = (el) => {
+    if (!el || el.nodeType !== 1) return false;
+    const label = [
+      el.getAttribute('aria-label') || '',
+      el.getAttribute('title') || '',
+      el.getAttribute('alt') || '',
+      el.textContent || ''
+    ].join(' ').replace(/\s+/g, ' ').trim().toUpperCase();
+    const marker = ((el.id || '') + ' ' + (typeof el.className === 'string' ? el.className : '')).toLowerCase();
+    const imageLogo = el.tagName === 'IMG' && /KANDY\s*TILE/.test(label);
+    const namedLogo = /logo|brand/.test(marker) && /KANDY\s*TILE/.test(label);
+    const adminLogo = el.classList.contains('kandy-admin-brand');
+    return imageLogo || namedLogo || adminLogo;
+  };
+  document.addEventListener('click', function(event){
+    let el = event.target && event.target.nodeType === 1 ? event.target : event.target && event.target.parentElement;
+    let logo = null;
+    for (let i = 0; el && i < 7; i++, el = el.parentElement) {
+      if (isKandyLogo(el)) { logo = el; break; }
+    }
+    if (!logo) return;
+    event.preventDefault();
+    event.stopPropagation();
+    window.location.href = new URL('./', window.location.href).href;
+  }, true);
+  const style = document.createElement('style');
+  style.textContent = '.kandy-admin-brand,[class*="logo"],[class*="brand"]{cursor:pointer}';
+  document.head.appendChild(style);
+})();
