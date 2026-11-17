@@ -3,7 +3,7 @@
   'use strict';
   const URL = 'https://dthepmehttlimzwgvotk.supabase.co';
   const KEY = 'sb_publishable_8SHCyJX1eetAhZvMOR9dFg_lEltHI15';
-  const ADMIN_EMAIL = 'mohamedamaan520@gmail.com';
+  const ADMIN_EMAILS = ['mohamedamaan520@gmail.com', 'chamalthilak01@gmail.com'];
   const BUCKET = 'catalog-photos';
   const client = window.supabase.createClient(URL, KEY);
   let isCloudAdmin = false, syncBusy = false, syncAgain = false, realtime = null;
@@ -16,7 +16,7 @@
     form.innerHTML = '<input type="email" id="cloud-email" autocomplete="username" placeholder="Admin email" required><input type="password" id="password" autocomplete="current-password" placeholder="Password (minimum 8 characters)" minlength="8" required><button class="primary" id="cloud-login" type="submit">Sign in</button><button type="button" id="cloud-signup">Create account</button>';
     const note = document.createElement('p');
     note.className = 'notice';
-    note.textContent = 'Admin access is restricted to the approved email address. Mobile/SMS login will be added later.';
+    note.textContent = 'Admin access is restricted to approved administrator email addresses.';
     adminPanel.appendChild(note);
     const seed = document.createElement('button');
     seed.id = 'cloud-seed';
@@ -31,7 +31,7 @@
       e.preventDefault();
       const email = $('cloud-email').value.trim().toLowerCase();
       const password = $('password').value;
-      if (email !== ADMIN_EMAIL) return msg('This email is not approved as the KANDY TILE administrator.');
+      if (!ADMIN_EMAILS.includes(email)) return msg('This email is not approved as a KANDY TILE administrator.');
       $('cloud-login').disabled = true;
       try {
         const { data, error } = await client.auth.signInWithPassword({ email, password });
@@ -43,7 +43,7 @@
     $('cloud-signup').onclick = async () => {
       const email = $('cloud-email').value.trim().toLowerCase();
       const password = $('password').value;
-      if (email !== ADMIN_EMAIL) return msg('Only the approved admin email can create an account.');
+      if (!ADMIN_EMAILS.includes(email)) return msg('Only approved administrator emails can create an account.');
       if (password.length < 8) return msg('Password must contain at least 8 characters.');
       $('cloud-signup').disabled = true;
       try {
