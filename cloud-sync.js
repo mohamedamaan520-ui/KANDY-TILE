@@ -1408,7 +1408,33 @@
   btn.addEventListener('click',async()=>{dialog.style.display='flex';try{await loadFolders();}catch(e){status(e.message);}});
   document.getElementById('kfp-close').addEventListener('click',()=>dialog.style.display='none');
   dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.style.display='none';});
-  function loadPdf(){if(window.jspdf&&window.jspdf.jsPDF)return Promise.resolve();return new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';sc.onload=resolve;sc.onerror=()=>reject(new Error('PDF library load failed.'));document.head.appendChild(sc);});}
+  function loadPdf(){
+    if(window.jspdf&&window.jspdf.jsPDF)return Promise.resolve();
+    if(window.__kandyFolderPdfLoader)return window.__kandyFolderPdfLoader;
+    window.__kandyFolderPdfLoader=(async()=>{
+      const sources=[
+        'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js',
+        'https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js'
+      ];
+      let lastError;
+      for(const src of sources){
+        try{
+          await new Promise((resolve,reject)=>{
+            const sc=document.createElement('script');
+            sc.src=src;sc.async=true;
+            sc.onload=()=>window.jspdf&&window.jspdf.jsPDF?resolve():reject(new Error('PDF script loaded but jsPDF was not available.'));
+            sc.onerror=()=>reject(new Error('Could not load '+src));
+            document.head.appendChild(sc);
+          });
+          return;
+        }catch(err){lastError=err;}
+      }
+      window.__kandyFolderPdfLoader=null;
+      throw new Error('PDF library could not load. Please check internet connection and try again. '+(lastError?.message||''));
+    })();
+    return window.__kandyFolderPdfLoader;
+  }
   async function photoData(path){
     const url=SUPA_URL+'/storage/v1/object/public/catalog-photos/'+String(path).split('/').map(encodeURIComponent).join('/');
     const res=await fetch(url);if(!res.ok)throw new Error('Photo download failed: '+path);
