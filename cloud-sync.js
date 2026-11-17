@@ -1531,7 +1531,8 @@
       color: #f3f4f6;
     }
     #kandy-theme-switch {
-      position: fixed; right: 16px; bottom: 16px; z-index: 99999;
+      position: static; display: inline-flex; align-items: center; justify-content: center;
+      flex: 0 0 auto; margin: 0 10px; vertical-align: middle; z-index: 99999;
       border: 1px solid rgba(100,116,139,.35); border-radius: 999px;
       padding: 10px 15px; min-height: 42px;
       background: #ffffff; color: #172033;
@@ -1542,7 +1543,7 @@
       background: #263449; color: #ffffff; border-color: #64748b;
     }
     @media(max-width:600px) {
-      #kandy-theme-switch { right: 10px; bottom: 10px; padding: 9px 12px; }
+      #kandy-theme-switch { margin: 6px 4px; padding: 8px 10px; font-size: 12px; }
     }
   `;
   document.head.appendChild(style);
@@ -1552,6 +1553,40 @@
   button.id = 'kandy-theme-switch';
   button.type = 'button';
   button.setAttribute('aria-label', 'Switch between light and dark mode');
+  // Capture the original brand/logo colours before applying either theme.
+  const logoNodes = Array.from(document.querySelectorAll('[id*="logo" i],[class*="logo" i],[id*="brand" i],[class*="brand" i]'));
+  const brandTextNodes = Array.from(document.querySelectorAll('header *, nav *, h1, h2')).filter(el =>
+    (el.children.length === 0 && /KANDY\\s*TILE/i.test(el.textContent || '')) ||
+    (/KANDY\\s*TILE/i.test(el.textContent || '') && el.children.length < 3)
+  );
+  [...new Set([...logoNodes, ...brandTextNodes])].forEach(el => {
+    const cs = getComputedStyle(el);
+    if (cs.color) el.style.setProperty('color', cs.color, 'important');
+    if (el.tagName.toLowerCase() === 'svg') {
+      if (cs.fill) el.style.setProperty('fill', cs.fill, 'important');
+      if (cs.stroke) el.style.setProperty('stroke', cs.stroke, 'important');
+    }
+    el.querySelectorAll('svg,svg *').forEach(node => {
+      const svgcs = getComputedStyle(node);
+      if (svgcs.fill && svgcs.fill !== 'none') node.style.setProperty('fill', svgcs.fill, 'important');
+      if (svgcs.stroke && svgcs.stroke !== 'none') node.style.setProperty('stroke', svgcs.stroke, 'important');
+    });
+  });
+
+  function placeThemeButton() {
+    const controls = Array.from(document.querySelectorAll('a,button,[role="button"]'));
+    const share = controls.find(el => /share\\s*catalogue/i.test((el.innerText || el.textContent || '').trim()));
+    const admin = controls.find(el => /^admin$/i.test((el.innerText || el.textContent || '').trim()));
+    if (share && admin && share.parentElement === admin.parentElement) {
+      admin.parentElement.insertBefore(button, admin);
+      return true;
+    }
+    if (share && share.parentElement) {
+      share.parentElement.insertBefore(button, share.nextSibling);
+      return true;
+    }
+    return false;
+  }
   function paint() {
     document.body.classList.toggle('kandy-theme-dark', dark);
     button.textContent = dark ? '☀ Light Mode' : '🌙 Dark Mode';
@@ -1562,8 +1597,13 @@
     try { localStorage.setItem('kandy-public-theme', dark ? 'dark' : 'light'); } catch (_) {}
     paint();
   });
-  document.body.appendChild(button);
+  if (!placeThemeButton()) document.body.appendChild(button);
   paint();
+  // Header controls can be rendered after this script; relocate the switch when they appear.
+  const headerObserver = new MutationObserver(() => {
+    if (button.parentElement === document.body) placeThemeButton();
+  });
+  headerObserver.observe(document.body, { childList: true, subtree: true });
 })();
 
 
