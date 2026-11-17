@@ -1565,3 +1565,60 @@
   document.body.appendChild(button);
   paint();
 })();
+
+
+/* KANDY TILE admin dashboard dark-mode styling */
+(function styleKandyAdminDarkMode() {
+  if (document.getElementById('kandy-admin-dark-style')) return;
+  const style = document.createElement('style');
+  style.id = 'kandy-admin-dark-style';
+  style.textContent = `
+    body.kandy-theme-dark #dashboard,
+    body.kandy-theme-dark #dashboard .admin-panel,
+    body.kandy-theme-dark #dashboard .panel,
+    body.kandy-theme-dark #dashboard .card,
+    body.kandy-theme-dark #dashboard .stat-card,
+    body.kandy-theme-dark #dashboard .section,
+    body.kandy-theme-dark #dashboard .modal-content {
+      background-color: #1f2937 !important;
+      color: #f3f4f6 !important;
+      border-color: #475569 !important;
+    }
+    body.kandy-theme-dark #dashboard h1,
+    body.kandy-theme-dark #dashboard h2,
+    body.kandy-theme-dark #dashboard h3,
+    body.kandy-theme-dark #dashboard h4,
+    body.kandy-theme-dark #dashboard label,
+    body.kandy-theme-dark #dashboard p,
+    body.kandy-theme-dark #dashboard span,
+    body.kandy-theme-dark #dashboard th,
+    body.kandy-theme-dark #dashboard td,
+    body.kandy-theme-dark #dashboard .notice {
+      color: #f3f4f6;
+    }
+    body.kandy-theme-dark #dashboard input:not([type="checkbox"]),
+    body.kandy-theme-dark #dashboard select,
+    body.kandy-theme-dark #dashboard textarea {
+      background: #111827 !important;
+      color: #f9fafb !important;
+      border-color: #64748b !important;
+    }
+    body.kandy-theme-dark #dashboard input::placeholder,
+    body.kandy-theme-dark #dashboard textarea::placeholder {
+      color: #9ca3af !important;
+    }
+    body.kandy-theme-dark #dashboard table,
+    body.kandy-theme-dark #dashboard tr {
+      background-color: #1f2937 !important;
+      color: #f3f4f6 !important;
+      border-color: #475569 !important;
+    }
+    body.kandy-theme-dark #dashboard button:not(.primary):not(.danger) {
+      background-color: #334155;
+      color: #f8fafc;
+      border-color: #64748b;
+    }
+    body.kandy-theme-dark #dashboard .hide { display: none !important; }
+  `;
+  document.head.appendChild(style);
+})();
