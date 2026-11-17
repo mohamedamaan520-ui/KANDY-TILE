@@ -22,14 +22,14 @@ jobs:
           from pathlib import Path
           p = Path("index.html")
           s = p.read_text(encoding="utf-8")
-          version = "20261117-export-fix-3"
+          version = "20261117-storage-fix-4"
           needle = 'src="cloud-sync.js"'
           if needle in s:
               s = s.replace(needle, 'src="cloud-sync.js?v=' + version + '"', 1)
               print("Cloud sync script cache version updated.")
           elif 'cloud-sync.js?v=' in s:
               import re
-              s = re.sub(r'src="cloud-sync\\.js(?:\\?[^"]*)?"', 'src="cloud-sync.js?v=' + version + '"', s, count=1)
+              s = re.sub(r'src="cloud-sync\.js(?:\?[^"]*)?"', 'src="cloud-sync.js?v=' + version + '"', s, count=1)
               print("Cloud sync script cache version refreshed.")
           else:
               marker = "</script></body></html>"
