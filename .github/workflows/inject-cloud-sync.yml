@@ -22,16 +22,19 @@ jobs:
           from pathlib import Path
           p = Path("index.html")
           s = p.read_text(encoding="utf-8")
-          if 'src="cloud-sync.js"' in s:
-              print("Cloud sync script is already connected.")
+          import re
+          version = "20261117-export-fix-2"
+          if re.search(r'<script[^>]+src=["\\']cloud-sync\\.js(?:\\?[^"\\']*)?["\\']', s):
+              s = re.sub(r'(<script[^>]+src=["\\'])cloud-sync\\.js(?:\\?[^"\\']*)?(["\\'])', r'\\g<1>cloud-sync.js?v=' + version + r'\\g<2>', s, count=1)
+              print("Cloud sync script cache version updated.")
           else:
               marker = "</script></body></html>"
               if marker not in s:
                   raise SystemExit("Could not find the safe insertion point in index.html; no changes made.")
-              replacement = '</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="cloud-sync.js"></script></body></html>'
+              replacement = '</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="cloud-sync.js?v=' + version + '"></script></body></html>'
               s = s.replace(marker, replacement, 1)
-              p.write_text(s, encoding="utf-8")
               print("Supabase JS and cloud-sync.js connected.")
+          p.write_text(s, encoding="utf-8")
           PY
       - name: Validate and commit
         run: |
