@@ -1583,11 +1583,17 @@
       .filter(el => visible(el) && /^admin$/i.test((el.innerText || el.textContent || '').trim()))
       .sort((x,y) => (x.innerText || x.textContent || '').length - (y.innerText || y.textContent || '').length)[0];
     if (share && share.parentElement) {
-      share.insertAdjacentElement('afterend', button);
+      // Do not move an already correctly placed button: doing so retriggers
+      // the observer forever and can prevent the page from finishing loading.
+      if (share.nextElementSibling !== button) {
+        share.insertAdjacentElement('afterend', button);
+      }
       return true;
     }
     if (admin && admin.parentElement) {
-      admin.insertAdjacentElement('beforebegin', button);
+      if (admin.previousElementSibling !== button) {
+        admin.insertAdjacentElement('beforebegin', button);
+      }
       return true;
     }
     return false;
