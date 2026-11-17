@@ -1473,127 +1473,30 @@
 })();
 
 
-/* Center tagline directly below the KANDY TILE logo; do not alter header control layout. */
+/* Tagline positioned once; avoid a body-wide MutationObserver. */
 (function kandyLogoCenteredTagline(){
   if (window.__kandyLogoCenteredTaglineV3) return;
   window.__kandyLogoCenteredTaglineV3 = true;
-  const STYLE_ID = 'kandy-logo-tagline-center-style';
-  function installStyle(){
-    let style=document.getElementById(STYLE_ID);
-    if(!style){style=document.createElement('style');style.id=STYLE_ID;document.head.appendChild(style);}
-    style.textContent = '.kandy-logo-tagline-anchor{position:relative!important;display:inline-block!important}.kandy-logo-tagline-anchor:after{content:"REFLECT YOUR STYLE.";position:absolute;top:100%;left:50%;transform:translateX(-50%);display:block;margin-top:2px;white-space:nowrap;text-align:center;font-size:clamp(9px,1.15vw,12px);line-height:1.2;font-weight:700;letter-spacing:.12em;color:inherit;pointer-events:none}';
-  }
-  function arrange(){
-    installStyle();
-    const candidates=Array.from(document.querySelectorAll('img,a,div,span,h1,h2,[class*="logo"],[class*="brand"]'));
-    const logo=candidates.find(el=>{
-      if(!el.getClientRects().length || el.closest('.kandy-admin-brand')) return false;
-      const alt=[el.getAttribute('alt')||'',el.getAttribute('title')||'',el.getAttribute('aria-label')||''].join(' ').toUpperCase();
-      const ownText=(el.childElementCount===0 ? (el.textContent||'').trim().replace(/\s+/g,' ') : '').toUpperCase();
-      const marker=((el.id||'')+' '+(typeof el.className==='string'?el.className:'')).toLowerCase();
-      return (el.tagName==='IMG' && /KANDY\s*TILE/.test(alt)) ||
-        (/logo|brand/.test(marker) && (/KANDY\s*TILE/.test(alt) || /^KANDY\s*TILE\.?$/.test(ownText))) ||
-        /^KANDY\s*TILE\.?$/.test(ownText);
-    });
-    if(!logo) return;
-    const anchor=logo.closest('a')||logo;
-    anchor.classList.add('kandy-logo-tagline-anchor');
-  }
-  arrange();
-  new MutationObserver(arrange).observe(document.body,{childList:true,subtree:true});
+  const style=document.createElement('style');
+  style.id='kandy-logo-tagline-center-style';
+  style.textContent='.kandy-logo-tagline-anchor{position:relative!important;display:inline-block!important}.kandy-logo-tagline-anchor:after{content:"REFLECT YOUR STYLE.";position:absolute;top:100%;left:50%;transform:translateX(-50%);display:block;margin-top:2px;white-space:nowrap;text-align:center;font-size:clamp(9px,1.15vw,12px);line-height:1.2;font-weight:700;letter-spacing:.12em;color:inherit;pointer-events:none}';
+  document.head.appendChild(style);
+  const candidates=Array.from(document.querySelectorAll('img,a,div,span,h1,h2,[class*="logo"],[class*="brand"]'));
+  const logo=candidates.find(el=>{
+    if(!el.getClientRects().length || el.closest('.kandy-admin-brand')) return false;
+    const alt=[el.getAttribute('alt')||'',el.getAttribute('title')||'',el.getAttribute('aria-label')||''].join(' ').toUpperCase();
+    const ownText=(el.childElementCount===0?(el.textContent||'').trim().replace(/\s+/g,' '):'').toUpperCase();
+    const marker=((el.id||'')+' '+(typeof el.className==='string'?el.className:'')).toLowerCase();
+    return (el.tagName==='IMG' && /KANDY\s*TILE/.test(alt)) || (/logo|brand/.test(marker) && (/KANDY\s*TILE/.test(alt) || /^KANDY\s*TILE\.?$/.test(ownText))) || /^KANDY\s*TILE\.?$/.test(ownText);
+  });
+  if(logo) (logo.closest('a')||logo).classList.add('kandy-logo-tagline-anchor');
 })();
 
-
-// KANDY TILE fixed appearance: customer view white, Admin view dark.
-// Lightweight observers avoid watching every catalogue mutation.
-(function setKandyFixedPageAppearance() {
-  if (window.__kandyFixedAppearanceReady) return;
-  window.__kandyFixedAppearanceReady = true;
-
-  const style = document.createElement('style');
-  style.id = 'kandy-fixed-appearance-style';
-  style.textContent = `
-    body:not(.kandy-admin-area) {
-      background: #ffffff !important;
-      background-color: #ffffff !important;
-    }
-    body.kandy-admin-area {
-      background: #111827 !important;
-      background-color: #111827 !important;
-      color: #f3f4f6;
-    }
-    body.kandy-admin-area #login-panel,
-    body.kandy-admin-area #dashboard,
-    body.kandy-admin-area #dashboard .admin-panel,
-    body.kandy-admin-area #dashboard .panel,
-    body.kandy-admin-area #dashboard .card,
-    body.kandy-admin-area #dashboard .stat-card,
-    body.kandy-admin-area #dashboard .section,
-    body.kandy-admin-area #dashboard .modal-content,
-    body.kandy-admin-area #dashboard table,
-    body.kandy-admin-area #dashboard tr {
-      background-color: #1f2937 !important;
-      border-color: #475569 !important;
-      color: #f3f4f6;
-    }
-    body.kandy-admin-area #login-panel input,
-    body.kandy-admin-area #dashboard input:not([type="checkbox"]),
-    body.kandy-admin-area #dashboard select,
-    body.kandy-admin-area #dashboard textarea {
-      background: #111827 !important;
-      border-color: #64748b !important;
-      color: #f9fafb !important;
-    }
-    body.kandy-admin-area #dashboard button:not(.primary):not(.danger) {
-      background-color: #334155;
-      border-color: #64748b;
-      color: #f9fafb;
-    }
-  `;
+/* Fixed appearance using CSS only; no observers or polling. */
+(function setKandyFixedPageAppearance(){
+  if(document.getElementById('kandy-fixed-appearance-style')) return;
+  const style=document.createElement('style');
+  style.id='kandy-fixed-appearance-style';
+  style.textContent='body{background:#fff!important;background-color:#fff!important} body:has(#login-panel:not(.hide)),body:has(#dashboard:not(.hide)){background:#111827!important;background-color:#111827!important;color:#f3f4f6} body:has(#login-panel:not(.hide)) #login-panel,body:has(#dashboard:not(.hide)) #dashboard,body:has(#dashboard:not(.hide)) #dashboard .admin-panel,body:has(#dashboard:not(.hide)) #dashboard .panel,body:has(#dashboard:not(.hide)) #dashboard .card,body:has(#dashboard:not(.hide)) #dashboard .stat-card,body:has(#dashboard:not(.hide)) #dashboard .section,body:has(#dashboard:not(.hide)) #dashboard .modal-content,body:has(#dashboard:not(.hide)) #dashboard table,body:has(#dashboard:not(.hide)) #dashboard tr{background-color:#1f2937!important;border-color:#475569!important;color:#f3f4f6} body:has(#login-panel:not(.hide)) #login-panel input,body:has(#dashboard:not(.hide)) #dashboard input:not([type="checkbox"]),body:has(#dashboard:not(.hide)) #dashboard select,body:has(#dashboard:not(.hide)) #dashboard textarea{background:#111827!important;border-color:#64748b!important;color:#f9fafb!important}';
   document.head.appendChild(style);
-
-  let panelObserver = null;
-  function updateArea() {
-    const login = document.getElementById('login-panel');
-    const dashboard = document.getElementById('dashboard');
-    const visible = el => {
-      if (!el || el.hidden || el.classList.contains('hide')) return false;
-      const css = getComputedStyle(el);
-      return css.display !== 'none' && css.visibility !== 'hidden';
-    };
-    const adminPage = visible(login) || visible(dashboard);
-    document.body.classList.toggle('kandy-admin-area', adminPage);
-    document.body.classList.remove('kandy-theme-dark');
-    const oldSwitch = document.getElementById('kandy-theme-switch');
-    if (oldSwitch) oldSwitch.remove();
-
-    if (panelObserver) panelObserver.disconnect();
-    panelObserver = new MutationObserver(updateArea);
-    [login, dashboard].filter(Boolean).forEach(el => {
-      panelObserver.observe(el, {
-        attributes: true,
-        attributeFilter: ['class', 'style', 'hidden']
-      });
-    });
-  }
-
-  updateArea();
-
-  // Only detect insertion/removal of the two Admin panels; ignore catalogue updates.
-  const structureObserver = new MutationObserver(records => {
-    let relevant = false;
-    for (const record of records) {
-      for (const node of [...record.addedNodes, ...record.removedNodes]) {
-        if (node.nodeType !== 1) continue;
-        if (node.id === 'login-panel' || node.id === 'dashboard' ||
-            node.querySelector?.('#login-panel, #dashboard')) {
-          relevant = true;
-          break;
-        }
-      }
-      if (relevant) break;
-    }
-    if (relevant) updateArea();
-  });
-  structureObserver.observe(document.body, { childList: true, subtree: true });
 })();
