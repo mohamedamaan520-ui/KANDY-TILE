@@ -1468,24 +1468,27 @@
 })();
 
 
-/* Center tagline under logo without moving Share Catalogue or Admin controls. */
+/* Center tagline directly below the KANDY TILE logo; do not alter header control layout. */
 (function kandyLogoCenteredTagline(){
-  if (window.__kandyLogoCenteredTaglineV2) return;
-  window.__kandyLogoCenteredTaglineV2 = true;
+  if (window.__kandyLogoCenteredTaglineV3) return;
+  window.__kandyLogoCenteredTaglineV3 = true;
   const STYLE_ID = 'kandy-logo-tagline-center-style';
   function installStyle(){
     let style=document.getElementById(STYLE_ID);
     if(!style){style=document.createElement('style');style.id=STYLE_ID;document.head.appendChild(style);}
-    style.textContent = '.kandy-logo-tagline-anchor{position:relative!important}.kandy-logo-tagline-anchor:after{content:"REFLECT YOUR STYLE.";position:absolute;top:100%;left:50%;transform:translateX(-50%);display:block;margin-top:2px;white-space:nowrap;text-align:center;font-size:clamp(9px,1.15vw,12px);line-height:1.2;font-weight:700;letter-spacing:.12em;color:inherit;pointer-events:none}';
+    style.textContent = '.kandy-logo-tagline-anchor{position:relative!important;display:inline-block!important}.kandy-logo-tagline-anchor:after{content:"REFLECT YOUR STYLE.";position:absolute;top:100%;left:50%;transform:translateX(-50%);display:block;margin-top:2px;white-space:nowrap;text-align:center;font-size:clamp(9px,1.15vw,12px);line-height:1.2;font-weight:700;letter-spacing:.12em;color:inherit;pointer-events:none}';
   }
   function arrange(){
     installStyle();
-    const candidates=Array.from(document.querySelectorAll('img,[class*="logo"],[class*="brand"]'));
+    const candidates=Array.from(document.querySelectorAll('img,a,div,span,h1,h2,[class*="logo"],[class*="brand"]'));
     const logo=candidates.find(el=>{
       if(!el.getClientRects().length || el.closest('.kandy-admin-brand')) return false;
-      const label=[el.getAttribute('alt')||'',el.getAttribute('title')||'',el.getAttribute('aria-label')||'',el.textContent||''].join(' ').toUpperCase();
+      const alt=[el.getAttribute('alt')||'',el.getAttribute('title')||'',el.getAttribute('aria-label')||''].join(' ').toUpperCase();
+      const ownText=(el.childElementCount===0 ? (el.textContent||'').trim().replace(/\s+/g,' ') : '').toUpperCase();
       const marker=((el.id||'')+' '+(typeof el.className==='string'?el.className:'')).toLowerCase();
-      return (el.tagName==='IMG' && /KANDY\\s*TILE/.test(label)) || (/logo|brand/.test(marker) && /KANDY\\s*TILE/.test(label));
+      return (el.tagName==='IMG' && /KANDY\s*TILE/.test(alt)) ||
+        (/logo|brand/.test(marker) && (/KANDY\s*TILE/.test(alt) || /^KANDY\s*TILE\.?$/.test(ownText))) ||
+        /^KANDY\s*TILE\.?$/.test(ownText);
     });
     if(!logo) return;
     const anchor=logo.closest('a')||logo;
