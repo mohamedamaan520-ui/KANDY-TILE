@@ -1295,3 +1295,23 @@
  window.addEventListener('kandy-category-admin-ready',createAdmin);
  new MutationObserver(refresh).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});refresh();
 })();
+
+
+/* KANDY TILE tagline wording update */
+(() => {
+  const replaceTagline = () => {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let textNode;
+    while ((textNode = walker.nextNode())) {
+      if (textNode.nodeValue && textNode.nodeValue.includes('REFLECT YOUR DREAM')) {
+        textNode.nodeValue = textNode.nodeValue.replaceAll('REFLECT YOUR DREAM', 'REFLECT YOUR STYLE');
+      }
+    }
+  };
+  if (document.body) {
+    replaceTagline();
+    new MutationObserver(replaceTagline).observe(document.body, { childList: true, subtree: true, characterData: true });
+  } else {
+    document.addEventListener('DOMContentLoaded', replaceTagline, { once: true });
+  }
+})();
