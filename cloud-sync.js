@@ -1359,3 +1359,84 @@
   style.textContent = '.kandy-admin-brand,[class*="logo"],[class*="brand"]{cursor:pointer}';
   document.head.appendChild(style);
 })();
+
+
+/* Reliable visible folder-to-PDF share control (independent of the older share modal). */
+(function kandyFolderPdfShareV2(){
+  if(window.__kandyFolderPdfShareV2) return;
+  window.__kandyFolderPdfShareV2 = true;
+  const SUPA_URL = 'https://dthepmehttlimzwgvotk.supabase.co';
+  const SUPA_KEY = 'sb_publishable_8SHCyJX1eetAhZvMOR9dFg_lEltHI15';
+  const css = document.createElement('style');
+  css.textContent = `
+    #kandy-folder-pdf-v2{position:fixed!important;left:16px!important;bottom:76px!important;z-index:2147483000!important;padding:13px 18px!important;border:1px solid #b7e7f1!important;border-radius:999px!important;background:linear-gradient(135deg,#087f9f,#124f78)!important;color:#fff!important;font-weight:800!important;box-shadow:0 8px 28px #001a2b66!important;cursor:pointer!important}
+    #kandy-folder-pdf-dialog{position:fixed;inset:0;z-index:2147483001;background:#061522dd;display:none;align-items:center;justify-content:center;padding:16px}
+    #kandy-folder-pdf-dialog .kfp-card{width:min(440px,100%);max-height:85vh;overflow:auto;padding:22px;border:1px solid #8ccbdc;border-radius:18px;background:#102f43;color:#effaff;box-shadow:0 20px 60px #0009}
+    #kandy-folder-pdf-dialog h2{margin:0 0 8px}#kandy-folder-pdf-dialog p{color:#c8e4ec}
+    #kandy-folder-pdf-dialog select,#kandy-folder-pdf-dialog button{box-sizing:border-box;width:100%;padding:13px;margin-top:10px;border-radius:10px;border:1px solid #6b9eaf;background:#12364b;color:white;font-size:15px}
+    #kandy-folder-pdf-dialog button.primary{background:#087f9f;font-weight:800}
+  `;
+  document.head.appendChild(css);
+  const btn=document.createElement('button');
+  btn.id='kandy-folder-pdf-v2';btn.type='button';btn.textContent='⇧ Share Tile Folder PDF';
+  const dialog=document.createElement('div');
+  dialog.id='kandy-folder-pdf-dialog';
+  dialog.innerHTML='<div class="kfp-card" role="dialog" aria-modal="true"><h2>Share Tile Folder PDF</h2><p>Select a folder. All tile photos and available item details will be included in one PDF.</p><select id="kfp-folder"><option value="">Loading folders...</option></select><button class="primary" id="kfp-share" type="button">Create PDF & Share</button><p id="kfp-status" aria-live="polite"></p><button id="kfp-close" type="button">Close</button></div>';
+  document.body.append(btn,dialog);
+  const status=t=>{const e=document.getElementById('kfp-status');if(e)e.textContent=t||'';};
+  const adminOn=()=>{const a=document.getElementById('dashboard'),b=document.getElementById('login-panel');const visible=e=>e&&!e.classList.contains('hide')&&getComputedStyle(e).display!=='none';return visible(a)||visible(b);};
+  function visibility(){btn.style.display=adminOn()?'none':'block';if(adminOn())dialog.style.display='none';}
+  new MutationObserver(visibility).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
+  visibility();
+  async function rows(){
+    const url=SUPA_URL+'/rest/v1/catalog_tiles?select=folder,tile_number,product_code,image_path&order=sort_order.asc';
+    const res=await fetch(url,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}});
+    if(!res.ok)throw new Error('Catalogue could not be loaded ('+res.status+').');
+    return await res.json();
+  }
+  async function loadFolders(){
+    status('Loading folders...');
+    const data=await rows();
+    const names=[...new Set(data.map(x=>x.folder).filter(Boolean))];
+    const select=document.getElementById('kfp-folder');
+    select.innerHTML='';
+    names.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;select.appendChild(o);});
+    if(!names.length)throw new Error('No tile folders found.');
+    status(names.length+' folders ready.');
+  }
+  btn.addEventListener('click',async()=>{dialog.style.display='flex';try{await loadFolders();}catch(e){status(e.message);}});
+  document.getElementById('kfp-close').addEventListener('click',()=>dialog.style.display='none');
+  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.style.display='none';});
+  function loadPdf(){if(window.jspdf&&window.jspdf.jsPDF)return Promise.resolve();return new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';sc.onload=resolve;sc.onerror=()=>reject(new Error('PDF library load failed.'));document.head.appendChild(sc);});}
+  async function photoData(path){
+    const url=SUPA_URL+'/storage/v1/object/public/catalog-photos/'+String(path).split('/').map(encodeURIComponent).join('/');
+    const res=await fetch(url);if(!res.ok)throw new Error('Photo download failed: '+path);
+    const blob=await res.blob(),object=URL.createObjectURL(blob);
+    try{const img=new Image();img.src=object;await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);return c.toDataURL('image/jpeg',0.9);}finally{URL.revokeObjectURL(object);}
+  }
+  document.getElementById('kfp-share').addEventListener('click',async()=>{
+    const folder=document.getElementById('kfp-folder').value;if(!folder){status('Please select a folder.');return;}
+    const button=document.getElementById('kfp-share');button.disabled=true;
+    try{
+      status('Loading tile details...');const all=await rows();const items=all.filter(x=>x.folder===folder);
+      if(!items.length)throw new Error('No tile items found in this folder.');
+      await loadPdf();const pdf=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      for(let i=0;i<items.length;i++){
+        if(i)pdf.addPage();
+        const item=items[i];pdf.setFillColor(7,31,48);pdf.rect(0,0,210,297,'F');
+        pdf.setTextColor(235,249,255);pdf.setFontSize(23);pdf.text('KANDY TILE',14,20);
+        pdf.setFontSize(14);pdf.text(folder,14,30);
+        pdf.setTextColor(174,216,230);pdf.setFontSize(10);pdf.text('REFLECT YOUR STYLE  |  '+(i+1)+' / '+items.length,14,38);
+        if(item.image_path){status('Adding photo '+(i+1)+' of '+items.length+'...');const data=await photoData(item.image_path);const p=pdf.getImageProperties(data);const maxW=180,maxH=180,scale=Math.min(maxW/p.width,maxH/p.height);const w=p.width*scale,h=p.height*scale;pdf.addImage(data,'JPEG',(210-w)/2,48+(180-h)/2,w,h,undefined,'FAST');}
+        pdf.setTextColor(245,251,255);pdf.setFontSize(14);let y=245;
+        const details=[item.tile_number?'Tile Number: '+item.tile_number:'',item.product_code?'Product Code: '+item.product_code:'','Folder: '+folder].filter(Boolean);
+        details.forEach(line=>{pdf.text(pdf.splitTextToSize(line,180),14,y);y+=9;});
+      }
+      const safe=folder.replace(/[^a-z0-9-_]+/gi,'-');
+      const file=new File([pdf.output('blob')],'KANDY-TILE-'+safe+'.pdf',{type:'application/pdf'});
+      if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){status('Opening share options...');await navigator.share({title:'KANDY TILE - '+folder,text:'Tile folder catalogue PDF',files:[file]});status('PDF share completed.');}
+      else{const u=URL.createObjectURL(file),a=document.createElement('a');a.href=u;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(u),2000);status('PDF downloaded. Attach this PDF in WhatsApp.');}
+    }catch(e){if(e.name==='AbortError')status('Share cancelled.');else{status(e.message||'PDF creation failed.');console.error('KANDY folder PDF:',e);}}
+    finally{button.disabled=false;}
+  });
+})();
