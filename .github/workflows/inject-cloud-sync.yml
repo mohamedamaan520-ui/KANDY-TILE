@@ -22,7 +22,7 @@ jobs:
           from pathlib import Path
           p = Path("index.html")
           s = p.read_text(encoding="utf-8")
-          version = "20261117-wordmark-colours-lock-4"
+          version = "20261117-fixed-customer-white-admin-dark-5"
           needle = 'src="cloud-sync.js"'
           if needle in s:
               s = s.replace(needle, 'src="cloud-sync.js?v=' + version + '"', 1)
