@@ -115,6 +115,47 @@
     const response = await fetch(dataUrl);
     return await response.blob();
   }
+  // Resize and compress uploaded photos before cloud upload. This also
+  // replaces the large in-memory data URL so later saves use less browser space.
+  async function compressTilePhoto(dataUrl) {
+    const sourceBlob = await dataUrlBlob(dataUrl);
+    if (!sourceBlob.type.startsWith('image/')) throw new Error('Please choose a valid image file.');
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(sourceBlob);
+    try {
+      await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = () => reject(new Error('The selected image could not be opened.'));
+        image.src = objectUrl;
+      });
+      const maxSide = 1600;
+      const scale = Math.min(1, maxSide / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
+      canvas.height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Image compression is not supported by this browser.');
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      let quality = 0.80;
+      let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
+      if (!blob) throw new Error('Could not compress this image. Please try another image.');
+      while (blob.size > 900 * 1024 && quality > 0.48) {
+        quality -= 0.10;
+        blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
+        if (!blob) break;
+      }
+      if (!blob) throw new Error('Could not compress this image. Please try another image.');
+      const compressedDataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Could not prepare the compressed image.'));
+        reader.readAsDataURL(blob);
+      });
+      return { blob, dataUrl: compressedDataUrl };
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
   function extension(blob) {
     return blob.type === 'image/png' ? 'png' : blob.type === 'image/gif' ? 'gif' : blob.type === 'image/jpeg' ? 'jpg' : 'webp';
   }
@@ -123,7 +164,9 @@
       if (tile.cloudPath) return tile.cloudPath;
       throw new Error('Image data missing for tile ' + tile.number);
     }
-    const blob = await dataUrlBlob(tile.image);
+    const compressed = await compressTilePhoto(tile.image);
+    const blob = compressed.blob;
+    tile.image = compressed.dataUrl;
     const path = 'tiles/' + tile.id.replace(/[^a-zA-Z0-9_-]/g, '_') + '.' + extension(blob);
     const { error } = await client.storage.from(BUCKET).upload(path, blob, {
       contentType: blob.type || 'image/webp', upsert: true, cacheControl: '3600'
