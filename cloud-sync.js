@@ -112,18 +112,58 @@
     const response = await fetch(dataUrl);
     return await response.blob();
   }
-  function extension(blob) {
-    return blob.type === 'image/png' ? 'png' : blob.type === 'image/gif' ? 'gif' : blob.type === 'image/jpeg' ? 'jpg' : 'webp';
+  function canvasBlob(canvas, type, quality) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('This image format could not be converted by your browser.')), type, quality);
+    });
+  }
+  async function compressTileImage(sourceBlob) {
+    // Convert browser-supported image formats to compact WebP before cloud upload.
+    // This prevents large phone photos (including 40+ MB PNGs) from exceeding Storage limits.
+    let image;
+    const objectUrl = URL.createObjectURL(sourceBlob);
+    try {
+      image = new Image();
+      image.decoding = 'async';
+      image.src = objectUrl;
+      if (image.decode) await image.decode();
+      else await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = reject; });
+      const maxSide = 2400;
+      let scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { alpha: true });
+      if (!ctx) throw new Error('Your browser could not prepare this photo for upload.');
+      let output;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        output = await canvasBlob(canvas, 'image/webp', [0.82, 0.76, 0.68, 0.60, 0.52][attempt]);
+        if (output.type === 'image/webp' && output.size <= 4 * 1024 * 1024) break;
+        if (attempt >= 2) scale *= 0.8;
+      }
+      if (!output || output.size > 4 * 1024 * 1024) {
+        throw new Error('This photo is still too large after compression. Please choose a smaller photo.');
+      }
+      return output;
+    } catch (err) {
+      if (err && /could not be converted/.test(err.message || '')) throw err;
+      throw new Error('Could not process this photo. Please use a JPG, PNG, or WEBP image. ' + (err.message || ''));
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
   }
   async function uploadTileImage(tile) {
     if (!tile.image || !tile.image.startsWith('data:')) {
       if (tile.cloudPath) return tile.cloudPath;
       throw new Error('Image data missing for tile ' + tile.number);
     }
-    const blob = await dataUrlBlob(tile.image);
-    const path = 'tiles/' + tile.id.replace(/[^a-zA-Z0-9_-]/g, '_') + '.' + extension(blob);
+    const originalBlob = await dataUrlBlob(tile.image);
+    const blob = await compressTileImage(originalBlob);
+    const path = 'tiles/' + tile.id.replace(/[^a-zA-Z0-9_-]/g, '_') + '.webp';
     const { error } = await client.storage.from(BUCKET).upload(path, blob, {
-      contentType: blob.type || 'image/webp', upsert: true, cacheControl: '3600'
+      contentType: 'image/webp', upsert: true, cacheControl: '3600'
     });
     if (error) throw error;
     tile.cloudPath = path;
