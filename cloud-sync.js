@@ -1492,11 +1492,10 @@
   if(logo) (logo.closest('a')||logo).classList.add('kandy-logo-tagline-anchor');
 })();
 
-/* Customer view stays white; preserve the Admin page's original styling. */
+/* Customer view background is always white on every browser.
+   Only the customer background is overridden; all text/logo colors and Admin styles remain untouched. */
 (function setKandyCustomerWhiteOnly(){
-  if(document.getElementById('kandy-customer-white-style')) return;
-  const style=document.createElement('style');
-  style.id='kandy-customer-white-style';
-  style.textContent='body:not(:has(#login-panel:not(.hide))):not(:has(#dashboard:not(.hide))){background:#fff!important;background-color:#fff!important} #kandy-theme-switch{display:none!important}';
-  document.head.appendChild(style);
+  let style=document.getElementById('kandy-customer-white-style');
+  if(!style){style=document.createElement('style');style.id='kandy-customer-white-style';document.head.appendChild(style);}
+  style.textContent='body.kandy-public-water-theme{background:#fff!important;background-color:#fff!important;background-image:none!important;background-attachment:initial!important} #kandy-theme-switch{display:none!important}';
 })();
