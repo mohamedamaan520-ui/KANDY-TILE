@@ -1497,5 +1497,34 @@
 (function setKandyCustomerWhiteOnly(){
   let style=document.getElementById('kandy-customer-white-style');
   if(!style){style=document.createElement('style');style.id='kandy-customer-white-style';document.head.appendChild(style);}
-  style.textContent='body.kandy-public-water-theme{background:#fff!important;background-color:#fff!important;background-image:none!important;background-attachment:initial!important} #kandy-theme-switch{display:none!important}';
+  style.textContent=`
+    html:has(body.kandy-public-water-theme) { background:#fff!important; background-image:none!important; }
+    body.kandy-public-water-theme {
+      background:#fff!important;
+      background-color:#fff!important;
+      background-image:none!important;
+      background-attachment:initial!important;
+    }
+    body.kandy-public-water-theme::before,
+    body.kandy-public-water-theme::after { background:none!important; }
+    body.kandy-public-water-theme main,
+    body.kandy-public-water-theme #app,
+    body.kandy-public-water-theme #root,
+    body.kandy-public-water-theme #catalogue,
+    body.kandy-public-water-theme #catalog,
+    body.kandy-public-water-theme .app,
+    body.kandy-public-water-theme .app-shell,
+    body.kandy-public-water-theme .site,
+    body.kandy-public-water-theme .site-content,
+    body.kandy-public-water-theme .main-content,
+    body.kandy-public-water-theme .catalogue,
+    body.kandy-public-water-theme .catalogue-page,
+    body.kandy-public-water-theme .catalogue-container,
+    body.kandy-public-water-theme .content {
+      background-color:transparent!important;
+      background-image:none!important;
+      box-shadow:none!important;
+    }
+    #kandy-theme-switch { display:none!important; }
+  `;
 })();
