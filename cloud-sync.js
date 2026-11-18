@@ -1582,3 +1582,61 @@
   enableImageFormats();
   new MutationObserver(enableImageFormats).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* Compress large catalogue image selections before the Admin's existing upload handler.
+   This fixes direct uploads that bypass the cloud-sync catalogue uploader. */
+(function kandyAdminUploadCompression(){
+  if(window.__kandyAdminUploadCompressionV1)return;
+  window.__kandyAdminUploadCompressionV1=true;
+  const busy=new WeakSet();
+  function toBlob(canvas,quality){
+    return new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Image compression failed.')),'image/webp',quality));
+  }
+  async function compress(file){
+    if(!file || !/^image\\/(png|jpeg|webp|avif|bmp|x-ms-bmp)$/i.test(file.type) || file.size<=3*1024*1024) return file;
+    let bitmap;
+    try{
+      bitmap=await createImageBitmap(file);
+      let scale=Math.min(1,2000/Math.max(bitmap.width,bitmap.height));
+      const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+      if(!ctx)throw new Error('Canvas unavailable');
+      let blob;
+      for(let i=0;i<7;i++){
+        canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+        canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+        blob=await toBlob(canvas,[0.82,0.76,0.70,0.64,0.58,0.52,0.46][i]);
+        if(blob.size<=3*1024*1024)break;
+        scale*=0.82;
+      }
+      if(!blob || blob.size>3*1024*1024)throw new Error('Could not reduce this image below 3 MB.');
+      const base=file.name.replace(/\\.[^.]+$/,'')||'image';
+      return new File([blob],base+'.webp',{type:'image/webp',lastModified:Date.now()});
+    }finally{if(bitmap)bitmap.close();}
+  }
+  document.addEventListener('change',async function(event){
+    const input=event.target;
+    if(!input || input.tagName!=='INPUT' || input.type!=='file' || input.dataset.kandyUploadReady==='1')return;
+    const files=Array.from(input.files||[]);
+    if(!files.some(f=>f && f.size>3*1024*1024 && /^image\\//i.test(f.type)))return;
+    if(busy.has(input))return;
+    busy.add(input);
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    try{
+      const converted=[];
+      for(const file of files)converted.push(await compress(file));
+      const transfer=new DataTransfer();
+      converted.forEach(file=>transfer.items.add(file));
+      input.files=transfer.files;
+      input.dataset.kandyUploadReady='1';
+      input.dispatchEvent(new Event('change',{bubbles:true}));
+      delete input.dataset.kandyUploadReady;
+    }catch(error){
+      console.error('KANDY image compression:',error);
+      alert('Image upload preparation failed: '+(error.message||'Please choose another image.'));
+    }finally{busy.delete(input);}
+  },true);
+})();
