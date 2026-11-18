@@ -22,7 +22,9 @@ jobs:
           from pathlib import Path
           p = Path("index.html")
           s = p.read_text(encoding="utf-8")
-          version = "20261118-png-cloud-upload-fix-1"
+          import subprocess
+          cloud_sha = subprocess.check_output(["git", "rev-parse", "HEAD:cloud-sync.js"], text=True).strip()
+          version = "cloud-" + cloud_sha[:12]
           needle = 'src="cloud-sync.js"'
           if needle in s:
               s = s.replace(needle, 'src="cloud-sync.js?v=' + version + '"', 1)
@@ -39,24 +41,6 @@ jobs:
               s = s.replace(marker, replacement, 1)
               print("Supabase JS and cloud-sync.js connected.")
           p.write_text(s, encoding="utf-8")
-          PY
-      - name: Diagnose legacy image upload paths
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          s = Path("index.html").read_text(encoding="utf-8")
-          terms = ["storage.from(", ".upload(", "catalog-photos", "FileReader", "readAsDataURL", "image/png"]
-          for term in terms:
-              print("\\n=== " + term + " ===")
-              pos = 0
-              count = 0
-              while True:
-                  pos = s.find(term, pos)
-                  if pos < 0 or count >= 12: break
-                  print(s[max(0,pos-450):min(len(s),pos+900)].replace("\\n"," ")[:1400])
-                  pos += len(term)
-                  count += 1
           PY
       - name: Validate and commit
         run: |
