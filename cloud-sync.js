@@ -5,7 +5,7 @@
   const KEY = 'sb_publishable_8SHCyJX1eetAhZvMOR9dFg_lEltHI15';
   const ADMIN_EMAILS = ['mohamedamaan520@gmail.com', 'chamalthilak01@gmail.com'];
   const BUCKET = 'catalog-photos';
-  const client = window.supabase.createClient(URL, KEY);
+  const client = window.__kandyTileSupabaseClient || (window.__kandyTileSupabaseClient = window.supabase.createClient(URL, KEY));
   let isCloudAdmin = false, syncBusy = false, syncAgain = false, realtime = null;
   const $ = id => document.getElementById(id);
   const msg = value => { const el = $('login-message'); if (el) el.textContent = value; };
@@ -1266,7 +1266,7 @@
 (function(){
  if(window.__kandyCategoryFeatureV1)return; window.__kandyCategoryFeatureV1=true;
  var URL='https://dthepmehttlimzwgvotk.supabase.co', KEY='sb_publishable_8SHCyJX1eetAhZvMOR9dFg_lEltHI15';
- var db=window.supabase.createClient(URL,KEY), cats=[], folderRows=[], items=[], panel=null, modal=null, level='categories', chosenCat='', chosenFolder='';
+ var db=window.__kandyTileSupabaseClient || (window.__kandyTileSupabaseClient=window.supabase.createClient(URL,KEY)), cats=[], folderRows=[], items=[], panel=null, modal=null, level='categories', chosenCat='', chosenFolder='';
  function shown(n){if(!n||n.classList.contains('hide'))return false;var s=getComputedStyle(n);return s.display!=='none'&&s.visibility!=='hidden';}
  function admin(){return shown(document.getElementById('dashboard'))||shown(document.getElementById('login-panel'));}
  function node(tag,cls,txt){var n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n;}
