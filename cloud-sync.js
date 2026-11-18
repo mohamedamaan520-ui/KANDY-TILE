@@ -218,9 +218,13 @@
 
   const originalSave = save;
   save = function() {
-    const ok = originalSave();
-    if (isCloudAdmin) { syncCloudCatalogue(); return true; }
-    return ok;
+    // Cloud admins save directly to Supabase. Avoid writing the same large
+    // catalogue into browser localStorage, which can exceed the browser quota.
+    if (isCloudAdmin) {
+      syncCloudCatalogue();
+      return true;
+    }
+    return originalSave();
   };
 
   $('logout').onclick = async () => {
