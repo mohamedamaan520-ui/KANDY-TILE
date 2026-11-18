@@ -1528,3 +1528,17 @@
     #kandy-theme-switch { display:none!important; }
   `;
 })();
+
+
+/* Allow all browser-supported image formats in Admin upload pickers. */
+(function kandyAllowAllImageUploads(){
+  if(window.__kandyAllImageUploadsV1)return;
+  window.__kandyAllImageUploadsV1=true;
+  function enableImageFormats(){
+    document.querySelectorAll('input[type="file"]').forEach(function(input){
+      input.setAttribute('accept','image/*');
+    });
+  }
+  enableImageFormats();
+  new MutationObserver(enableImageFormats).observe(document.documentElement,{childList:true,subtree:true});
+})();
