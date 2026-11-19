@@ -1125,3 +1125,64 @@
   const observer = new MutationObserver(() => apply());
   observer.observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* Public catalogue hero: small style refinement and requested tile-count label. */
+(function refinePublicCatalogueHero(){
+  if (window.__kandyPublicHeroRefineV2) return;
+  window.__kandyPublicHeroRefineV2 = true;
+  function apply(){
+    const heading = Array.from(document.querySelectorAll('h1,h2')).find(el =>
+      /REFLECT\s+YOUR\s+DREAM\.?/i.test((el.textContent || '').trim())
+    );
+    if (!heading) return;
+    let hero = heading.parentElement;
+    while (hero && hero !== document.body) {
+      const txt = (hero.innerText || '').replace(/\s+/g,' ');
+      if (/Explore our tile collections/i.test(txt) &&
+          /035\s*222\s*3333/.test(txt) &&
+          /071\s*3?\s*222\s*888/.test(txt)) break;
+      hero = hero.parentElement;
+    }
+    if (!hero || hero === document.body) return;
+    hero.classList.add('kandy-public-colour-hero');
+
+    // Update only the tile-count wording inside this public hero.
+    const walker = document.createTreeWalker(hero, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+      if (/\b157\s+tile\s+designs\b/i.test(node.nodeValue || '')) {
+        node.nodeValue = node.nodeValue.replace(/\b157\s+tile\s+designs\b/i, '167 tile designs');
+      }
+    }
+
+    if (document.getElementById('kandy-public-hero-refine-style')) return;
+    const style = document.createElement('style');
+    style.id = 'kandy-public-hero-refine-style';
+    style.textContent = `
+      .kandy-public-colour-hero{
+        background:
+          radial-gradient(ellipse at 9% 0%,rgba(255,105,165,.56),transparent 37%),
+          radial-gradient(ellipse at 95% 12%,rgba(255,190,92,.40),transparent 34%),
+          radial-gradient(ellipse at 78% 100%,rgba(60,226,204,.38),transparent 40%),
+          radial-gradient(ellipse at 32% 100%,rgba(130,112,255,.40),transparent 43%),
+          linear-gradient(120deg,#21143d 0%,#482451 34%,#1b4568 70%,#07565a 100%)!important;
+        border-radius:28px!important;
+        box-shadow:0 20px 58px rgba(19,18,55,.30),inset 0 1px 0 rgba(255,255,255,.22)!important;
+      }
+      .kandy-public-colour-hero h1{
+        background:linear-gradient(100deg,#fff 0%,#ffe6a3 32%,#ff9fc8 65%,#a5f1ff 100%);
+        -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+      }
+      .kandy-public-colour-hero a[href^="tel:"],
+      .kandy-public-colour-hero a[href*="wa.me"],
+      .kandy-public-colour-hero a[href*="whatsapp"]{border-radius:14px!important}
+      @media(max-width:640px){.kandy-public-colour-hero{border-radius:20px!important}}
+    `;
+    document.head.appendChild(style);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',apply,{once:true});
+  else apply();
+  const observer = new MutationObserver(() => apply());
+  observer.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+})();
