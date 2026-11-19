@@ -14,7 +14,7 @@
   const adminPanel = $('login-panel');
   if (adminPanel) {
     const form = $('login-form');
-    form.innerHTML = '<input type="text" id="cloud-email" autocomplete="username" placeholder="Username" required><input type="password" id="password" autocomplete="current-password" placeholder="Password" minlength="4" required><button class="primary" id="cloud-login" type="submit">Sign in</button>';
+    form.innerHTML = '<input type="text" id="cloud-email" autocomplete="username" placeholder="Username" required><input type="password" id="password" autocomplete="current-password" placeholder="Password" minlength="6" required><button class="primary" id="cloud-login" type="submit">Sign in</button>';
     const note = document.createElement('p');
     note.className = 'notice';
     note.textContent = 'Admin access is restricted to the approved email address. Mobile/SMS login will be added later.';
@@ -65,7 +65,7 @@
       <p class="notice">Only Main Admin can create or remove staff usernames and passwords.</p>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px">
         <input id="staff-new-username" type="text" autocomplete="off" maxlength="32" placeholder="New username (3–32 characters)">
-        <input id="staff-new-password" type="password" autocomplete="new-password" minlength="4" maxlength="72" placeholder="Password (minimum 4 characters)">
+        <input id="staff-new-password" type="password" autocomplete="new-password" minlength="6" maxlength="72" placeholder="Password (minimum 6 characters)">
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
         <button type="button" class="primary" id="staff-create-btn">Create Staff Login</button>
