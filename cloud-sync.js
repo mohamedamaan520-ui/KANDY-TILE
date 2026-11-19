@@ -35,7 +35,7 @@
       if (!loginName) return msg('Enter your username.');
       const email = loginName.includes('@')
         ? loginName
-        : (loginName === 'mohamedamaan520' ? ADMIN_EMAIL : loginName + '@kandytile.invalid');
+        : (['amaan', 'mohamedamaan520'].includes(loginName) ? ADMIN_EMAIL : loginName + '@kandytile.invalid');
       $('cloud-login').disabled = true;
       try {
         const { data, error } = await client.auth.signInWithPassword({ email, password });
