@@ -1060,3 +1060,74 @@
   observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   updateVisibility();
 })();
+
+
+/* Colourful premium styling for the public catalogue hero only. */
+(function stylePublicCatalogueHero(){
+  if (window.__kandyPublicHeroColourV1) return;
+  window.__kandyPublicHeroColourV1 = true;
+  function apply(){
+    if (document.getElementById('kandy-public-hero-colour-style')) return;
+    const headings = Array.from(document.querySelectorAll('h1,h2')).filter(el =>
+      /REFLECT\\s+YOUR\\s+DREAM\\.?/i.test((el.textContent || '').trim())
+    );
+    const heading = headings[0];
+    if (!heading) return;
+    let hero = heading.parentElement;
+    while (hero && hero !== document.body) {
+      const txt = (hero.innerText || '').replace(/\\s+/g,' ');
+      if (/Explore our tile collections/i.test(txt) && /035\\s*222\\s*3333/.test(txt) && /071\\s*3?\\s*222\\s*888/.test(txt)) break;
+      hero = hero.parentElement;
+    }
+    if (!hero || hero === document.body) return;
+    hero.classList.add('kandy-public-colour-hero');
+    const style = document.createElement('style');
+    style.id = 'kandy-public-hero-colour-style';
+    style.textContent = `
+      .kandy-public-colour-hero{
+        position:relative!important;isolation:isolate!important;overflow:hidden!important;
+        border:1px solid rgba(255,255,255,.16)!important;
+        border-radius:26px!important;
+        background:
+          radial-gradient(ellipse at 8% 5%,rgba(255,91,145,.34),transparent 36%),
+          radial-gradient(ellipse at 88% 8%,rgba(91,110,255,.34),transparent 38%),
+          radial-gradient(ellipse at 72% 100%,rgba(0,210,190,.22),transparent 42%),
+          linear-gradient(125deg,#17142f 0%,#29204c 42%,#123b50 100%)!important;
+        box-shadow:0 18px 55px rgba(14,18,50,.28),inset 0 1px 0 rgba(255,255,255,.18)!important;
+      }
+      .kandy-public-colour-hero:before{
+        content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+        background:linear-gradient(115deg,transparent 12%,rgba(255,255,255,.07) 48%,transparent 78%);
+      }
+      .kandy-public-colour-hero h1{
+        color:#fff!important;
+        background:linear-gradient(95deg,#fff 0%,#ffe08a 30%,#ff8fbd 62%,#8fe9ff 100%);
+        -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+        text-shadow:0 8px 30px rgba(255,125,180,.12)!important;
+        letter-spacing:-.035em!important;
+      }
+      .kandy-public-colour-hero a[href^="tel:"],
+      .kandy-public-colour-hero a[href*="wa.me"],
+      .kandy-public-colour-hero a[href*="whatsapp"]{
+        border-radius:13px!important;box-shadow:0 7px 18px rgba(0,0,0,.18)!important;
+        transition:transform .2s ease,box-shadow .2s ease!important;
+      }
+      .kandy-public-colour-hero a[href^="tel:"]:hover,
+      .kandy-public-colour-hero a[href*="wa.me"]:hover,
+      .kandy-public-colour-hero a[href*="whatsapp"]:hover{
+        transform:translateY(-2px)!important;box-shadow:0 11px 24px rgba(0,0,0,.25)!important;
+      }
+      .kandy-public-colour-hero img{
+        filter:drop-shadow(0 12px 18px rgba(0,0,0,.28));
+      }
+      @media(max-width:640px){
+        .kandy-public-colour-hero{border-radius:18px!important}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',apply,{once:true});
+  else apply();
+  const observer = new MutationObserver(() => apply());
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+})();
