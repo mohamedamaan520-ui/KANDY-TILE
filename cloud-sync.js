@@ -1089,10 +1089,12 @@
         border:1px solid rgba(255,255,255,.16)!important;
         border-radius:26px!important;
         background:
-          radial-gradient(ellipse at 8% 5%,rgba(255,91,145,.34),transparent 36%),
-          radial-gradient(ellipse at 88% 8%,rgba(91,110,255,.34),transparent 38%),
-          radial-gradient(ellipse at 72% 100%,rgba(0,210,190,.22),transparent 42%),
-          linear-gradient(125deg,#17142f 0%,#29204c 42%,#123b50 100%)!important;
+          radial-gradient(ellipse at 7% 8%,rgba(255,70,130,.62),transparent 38%),
+          radial-gradient(ellipse at 92% 4%,rgba(255,177,66,.48),transparent 34%),
+          radial-gradient(ellipse at 82% 92%,rgba(0,224,190,.48),transparent 40%),
+          radial-gradient(ellipse at 35% 100%,rgba(104,91,255,.48),transparent 42%),
+          radial-gradient(ellipse at 52% 28%,rgba(255,255,255,.13),transparent 48%),
+          linear-gradient(118deg,#251044 0%,#52205d 28%,#153f69 62%,#075b60 100%)!important;
         box-shadow:0 18px 55px rgba(14,18,50,.28),inset 0 1px 0 rgba(255,255,255,.18)!important;
       }
       .kandy-public-colour-hero:before{
