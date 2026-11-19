@@ -48,7 +48,17 @@
 
   async function staffAdminRequest(body) {
     const { data, error } = await client.functions.invoke('catalog-staff-admin', { body });
-    if (error) throw error;
+    if (error) {
+      let detail = error.message || 'Staff request failed.';
+      try {
+        const response = error.context;
+        if (response && typeof response.clone === 'function') {
+          const payload = await response.clone().json();
+          detail = payload?.error || payload?.message || detail;
+        }
+      } catch (_) {}
+      throw new Error(detail);
+    }
     if (data?.error) throw new Error(data.error);
     return data;
   }
