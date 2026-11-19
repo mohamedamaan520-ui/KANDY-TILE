@@ -14,7 +14,7 @@
   const adminPanel = $('login-panel');
   if (adminPanel) {
     const form = $('login-form');
-    form.innerHTML = '<input type="email" id="cloud-email" autocomplete="username" placeholder="Admin email" required><input type="password" id="password" autocomplete="current-password" placeholder="Password (minimum 8 characters)" minlength="8" required><button class="primary" id="cloud-login" type="submit">Sign in</button><button type="button" id="cloud-signup">Create account</button>';
+    form.innerHTML = '<input type="text" id="cloud-email" autocomplete="username" placeholder="Username" required><input type="password" id="password" autocomplete="current-password" placeholder="Password" minlength="8" required><button class="primary" id="cloud-login" type="submit">Sign in</button>';
     const note = document.createElement('p');
     note.className = 'notice';
     note.textContent = 'Admin access is restricted to the approved email address. Mobile/SMS login will be added later.';
@@ -30,9 +30,12 @@
     seed.addEventListener('click', seedExisting);
     $('login-form').onsubmit = async e => {
       e.preventDefault();
-      const email = $('cloud-email').value.trim().toLowerCase();
+      const loginName = $('cloud-email').value.trim().toLowerCase();
       const password = $('password').value;
-      if (email !== ADMIN_EMAIL) return msg('This email is not approved as the KANDY TILE administrator.');
+      if (!loginName) return msg('Enter your username.');
+      const email = loginName.includes('@')
+        ? loginName
+        : (loginName === 'mohamedamaan520' ? ADMIN_EMAIL : loginName + '@kandytile.invalid');
       $('cloud-login').disabled = true;
       try {
         const { data, error } = await client.auth.signInWithPassword({ email, password });
@@ -41,23 +44,82 @@
       } catch (err) { msg(friendly(err)); }
       finally { if ($('cloud-login')) $('cloud-login').disabled = false; }
     };
-    $('cloud-signup').onclick = async () => {
-      const email = $('cloud-email').value.trim().toLowerCase();
-      const password = $('password').value;
-      if (email !== ADMIN_EMAIL) return msg('Only the approved admin email can create an account.');
-      if (password.length < 8) return msg('Password must contain at least 8 characters.');
-      $('cloud-signup').disabled = true;
+  }
+
+  async function staffAdminRequest(body) {
+    const { data, error } = await client.functions.invoke('catalog-staff-admin', { body });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data;
+  }
+
+  async function showStaffManager() {
+    const dashboard = $('dashboard');
+    if (!dashboard || $('catalog-staff-manager')) return;
+    const panel = document.createElement('section');
+    panel.id = 'catalog-staff-manager';
+    panel.className = 'admin-panel';
+    panel.style.marginTop = '16px';
+    panel.innerHTML = `
+      <h3>Main Admin — Staff Login Accounts</h3>
+      <p class="notice">Only Main Admin can create or remove staff usernames and passwords.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px">
+        <input id="staff-new-username" type="text" autocomplete="off" maxlength="32" placeholder="New username (3–32 characters)">
+        <input id="staff-new-password" type="password" autocomplete="new-password" minlength="8" maxlength="72" placeholder="Temporary password (8+ characters)">
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button type="button" class="primary" id="staff-create-btn">Create Staff Login</button>
+        <button type="button" id="staff-refresh-btn">Refresh Users</button>
+      </div>
+      <p id="staff-manager-message" class="notice" aria-live="polite"></p>
+      <div id="staff-user-list" style="display:grid;gap:8px;margin-top:10px"></div>`;
+    const firstPanel = dashboard.querySelector('.admin-panel');
+    if (firstPanel) firstPanel.insertAdjacentElement('afterend', panel);
+    else dashboard.prepend(panel);
+
+    const message = text => { const el = $('staff-manager-message'); if (el) el.textContent = text; };
+    const loadUsers = async () => {
       try {
-        const { data, error } = await client.auth.signUp({
-          email, password,
-          options: { emailRedirectTo: location.origin + location.pathname }
+        const result = await staffAdminRequest({ action: 'list' });
+        const list = $('staff-user-list');
+        list.replaceChildren();
+        (result.users || []).forEach(user => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid rgba(140,190,210,.35);border-radius:10px;flex-wrap:wrap';
+          const label = document.createElement('strong');
+          label.textContent = user.username;
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.textContent = 'Delete';
+          remove.addEventListener('click', async () => {
+            if (!confirm('Delete staff login "' + user.username + '"? This will disable that account.')) return;
+            remove.disabled = true;
+            try { await staffAdminRequest({ action: 'delete', user_id: user.user_id }); message('Staff account deleted.'); await loadUsers(); }
+            catch (err) { message(friendly(err)); remove.disabled = false; }
+          });
+          row.append(label, remove);
+          list.append(row);
         });
-        if (error) throw error;
-        if (data.session) await activateAdmin(data.session);
-        else msg('Account created. Check your email and confirm the sign-up link, then return here and sign in.');
-      } catch (err) { msg(friendly(err)); }
-      finally { $('cloud-signup').disabled = false; }
+        if (!(result.users || []).length) list.textContent = 'No staff accounts created yet.';
+      } catch (err) { message('Could not load staff accounts: ' + friendly(err)); }
     };
+    $('staff-create-btn').addEventListener('click', async () => {
+      const username = $('staff-new-username').value.trim();
+      const password = $('staff-new-password').value;
+      if (!username || !password) return message('Enter both username and password.');
+      const button = $('staff-create-btn');
+      button.disabled = true;
+      try {
+        await staffAdminRequest({ action: 'create', username, password });
+        $('staff-new-username').value = '';
+        $('staff-new-password').value = '';
+        message('Staff login created. Share the username and password privately with that staff member.');
+        await loadUsers();
+      } catch (err) { message(friendly(err)); }
+      finally { button.disabled = false; }
+    });
+    $('staff-refresh-btn').addEventListener('click', loadUsers);
+    await loadUsers();
   }
 
   async function activateAdmin(session) {
@@ -72,6 +134,9 @@
     }
     isCloudAdmin = true;
     adminUnlocked = true;
+    if ((session.user?.email || '').toLowerCase() === ADMIN_EMAIL) {
+      showStaffManager().catch(err => console.error('Staff manager:', err));
+    }
     $('password').value = '';
     $('login-panel').classList.add('hide');
     $('dashboard').classList.remove('hide');
