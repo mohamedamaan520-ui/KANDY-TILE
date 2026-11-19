@@ -728,3 +728,39 @@
   fix();
   new MutationObserver(fix).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* KANDY TILE logo click: return to the public home page. */
+(function addKandyLogoHomeLink(){
+  if (window.__kandyLogoHomeLinkV1) return;
+  window.__kandyLogoHomeLinkV1 = true;
+
+  const style = document.createElement('style');
+  style.textContent = [
+    '.kandy-admin-brand, .kandy-logo, .site-logo, .brand-logo, #logo, #site-logo { cursor:pointer; }',
+    '.kandy-admin-brand:focus-visible, .kandy-logo:focus-visible, .site-logo:focus-visible, .brand-logo:focus-visible, #logo:focus-visible, #site-logo:focus-visible { outline:3px solid #d8b56d; outline-offset:4px; }'
+  ].join('\\n');
+  document.head.appendChild(style);
+
+  function isLogoTarget(target) {
+    if (!target || !target.closest) return false;
+    return !!target.closest(
+      '.kandy-admin-brand, .kandy-logo, .site-logo, .brand-logo, #logo, #site-logo, ' +
+      '[data-home-logo], header .logo, nav .logo, a[aria-label*="logo" i], ' +
+      'img[alt*="logo" i], img[alt*="kandy" i], img[src*="logo" i]'
+    );
+  }
+
+  document.addEventListener('click', function(event) {
+    if (!isLogoTarget(event.target)) return;
+    const logo = event.target.closest(
+      '.kandy-admin-brand, .kandy-logo, .site-logo, .brand-logo, #logo, #site-logo, ' +
+      '[data-home-logo], header .logo, nav .logo, a[aria-label*="logo" i], ' +
+      'img[alt*="logo" i], img[alt*="kandy" i], img[src*="logo" i]'
+    );
+    if (!logo) return;
+    event.preventDefault();
+    event.stopPropagation();
+    window.location.href = new URL('./', window.location.href).href;
+  }, true);
+})();
