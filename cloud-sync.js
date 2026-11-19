@@ -857,8 +857,12 @@
     .kexp-body{padding:15px 17px;overflow:auto;min-height:180px}
     .kexp-section-title{margin:0 0 10px;font-size:13px;color:#315565;text-transform:uppercase;letter-spacing:1px}
     .kexp-folders{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:17px}
-    .kexp-folder{display:flex;align-items:center;gap:7px;padding:9px 11px;background:#eaf1f4;border:1px solid #d5e0e5;border-radius:10px;font-size:13px;cursor:pointer}
+    .kexp-folder{display:flex;align-items:center;gap:7px;padding:7px 9px;background:#eaf1f4;border:1px solid #d5e0e5;border-radius:10px;font-size:13px}
     .kexp-folder input,.kexp-card input{accent-color:#176c82;width:17px;height:17px}
+    .kexp-folder-filter{border:0;background:transparent;color:#173746;font:700 13px Arial,sans-serif;cursor:pointer;padding:3px;text-align:left}
+    .kexp-folder-filter.active{color:#087e9b;text-decoration:underline;text-underline-offset:3px}
+    .kexp-all-folders{padding:9px 11px;border:1px solid #d5e0e5;border-radius:10px;background:#fff;color:#173746;font-weight:700;cursor:pointer}
+    .kexp-all-folders.active{background:#d8edf2;border-color:#19788b}
     .kexp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(142px,1fr));gap:11px}
     .kexp-card{position:relative;min-width:0;border:1px solid #d9e2e6;border-radius:12px;background:white;overflow:hidden;cursor:pointer}
     .kexp-card.selected{border:2px solid #19788b;box-shadow:0 0 0 2px #19788b20}
@@ -893,6 +897,7 @@
   const $ = selector => overlay.querySelector(selector);
   const selected = new Set();
   let filteredTiles = [];
+  let activeFolder = null;
   let busy = false;
 
   function allTiles(){ return (typeof tiles !== 'undefined' && Array.isArray(tiles)) ? tiles.filter(t => t && t.image) : []; }
@@ -909,17 +914,22 @@
   function render(){
     const q=$('.kexp-search').value.trim().toLowerCase();
     const list=allTiles();
-    filteredTiles=list.filter(t=>(safeText(t.folder)+' '+safeText(t.number)+' '+safeText(t.code)).toLowerCase().includes(q));
+    filteredTiles=list.filter(t=>(activeFolder===null || safeText(t.folder)===activeFolder) && (safeText(t.folder)+' '+safeText(t.number)+' '+safeText(t.code)).toLowerCase().includes(q));
     const folderBox=$('.kexp-folders');
     folderBox.innerHTML='';
-    allFolders().forEach((folder,index)=>{
+    const allButton=document.createElement('button');
+    allButton.type='button';allButton.className='kexp-all-folders'+(activeFolder===null?' active':'');
+    allButton.textContent='All folders';
+    allButton.addEventListener('click',()=>{activeFolder=null;render();});
+    folderBox.append(allButton);
+    allFolders().forEach((folder)=>{
       const members=list.filter(t=>safeText(t.folder)===safeText(folder));
-      if(q && !members.some(t=>filteredTiles.includes(t)) && !safeText(folder).toLowerCase().includes(q)) return;
+      if(q && !members.some(t=>(safeText(t.folder)+' '+safeText(t.number)+' '+safeText(t.code)).toLowerCase().includes(q)) && !safeText(folder).toLowerCase().includes(q)) return;
       const checked=members.length>0 && members.every(t=>selected.has(tileKey(t)));
-      const label=document.createElement('label');label.className='kexp-folder';
-      const input=document.createElement('input');input.type='checkbox';input.checked=checked;input.dataset.folder=String(folder);
-      const span=document.createElement('span');span.textContent=safeText(folder)+' ('+members.length+')';
-      label.append(input,span);folderBox.append(label);
+      const wrap=document.createElement('div');wrap.className='kexp-folder';
+      const input=document.createElement('input');input.type='checkbox';input.checked=checked;input.dataset.folder=String(folder);input.setAttribute('aria-label','Select all designs in '+safeText(folder));
+      const filter=document.createElement('button');filter.type='button';filter.className='kexp-folder-filter'+(activeFolder===safeText(folder)?' active':'');filter.textContent=safeText(folder)+' ('+members.length+')';filter.dataset.filterFolder=String(folder);
+      wrap.append(input,filter);folderBox.append(wrap);
     });
     const grid=$('.kexp-grid');grid.innerHTML='';
     if(!filteredTiles.length){grid.innerHTML='<div class="kexp-empty">No tile designs found.</div>';updateCount();return;}
@@ -935,11 +945,15 @@
   }
 
   function close(){overlay.classList.remove('open');}
-  open.addEventListener('click',()=>{selected.clear();$('.kexp-search').value='';render();overlay.classList.add('open');});
+  open.addEventListener('click',()=>{selected.clear();activeFolder=null;$('.kexp-search').value='';render();overlay.classList.add('open');});
   overlay.querySelector('.kexp-close').addEventListener('click',close);
   overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('open'))close();});
   $('.kexp-search').addEventListener('input',render);
+  overlay.addEventListener('click',e=>{
+    const filter=e.target.closest('[data-filter-folder]');
+    if(filter){activeFolder=filter.dataset.filterFolder;render();}
+  });
   overlay.addEventListener('change',e=>{
     const input=e.target;
     if(input.matches('input[data-folder]')){
@@ -961,13 +975,28 @@
   function loadJsPdf(){
     if(window.jspdf?.jsPDF)return Promise.resolve(window.jspdf.jsPDF);
     if(window.__kandyJsPdfLoading)return window.__kandyJsPdfLoading;
-    window.__kandyJsPdfLoading=new Promise((resolve,reject)=>{
-      const script=document.createElement('script');
-      script.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
-      script.onload=()=>window.jspdf?.jsPDF?resolve(window.jspdf.jsPDF):reject(new Error('PDF library could not start.'));
-      script.onerror=()=>reject(new Error('PDF tool could not load. Please check your internet connection and try again.'));
-      document.head.appendChild(script);
-    });
+    window.__kandyJsPdfLoading=(async()=>{
+      const sources=[
+        'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',
+        'https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js'
+      ];
+      let lastError=null;
+      for(const src of sources){
+        try{
+          await new Promise((resolve,reject)=>{
+            const script=document.createElement('script');
+            const timer=setTimeout(()=>{script.remove();reject(new Error('PDF library loading timed out.'));},15000);
+            script.src=src;
+            script.onload=()=>{clearTimeout(timer);window.jspdf?.jsPDF?resolve():reject(new Error('PDF library did not initialise.'));};
+            script.onerror=()=>{clearTimeout(timer);script.remove();reject(new Error('Could not load '+new URL(src).hostname));};
+            document.head.appendChild(script);
+          });
+          if(window.jspdf?.jsPDF)return window.jspdf.jsPDF;
+        }catch(error){lastError=error;console.warn('KANDY TILE PDF CDN fallback:',src,error);}
+      }
+      throw new Error('PDF library could not load from the available sources. Please check your internet connection or allow cdn.jsdelivr.net / unpkg.com / cdnjs.cloudflare.com. '+(lastError?.message||''));
+    })().catch(error=>{window.__kandyJsPdfLoading=null;throw error;});
     return window.__kandyJsPdfLoading;
   }
   async function imageToPng(url){
