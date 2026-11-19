@@ -902,7 +902,7 @@
   function visibleViewer(){
     const dashboard=document.getElementById('dashboard');
     const admin=document.getElementById('admin');
-    return !(dashboard && !dashboard.classList.contains('hide')) && !(admin && !admin.classList.contains('hide'));
+    return !(admin && !admin.classList.contains('hide'));
   }
   function updateVisibility(){ open.style.display=visibleViewer()?'flex':'none'; }
   function updateCount(){ $('.kexp-count').textContent=selected.size+' selected'; }
