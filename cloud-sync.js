@@ -802,7 +802,7 @@
     installButton.type = 'button';
     installButton.id = 'kandy-install-app';
     installButton.innerHTML = '<img src="./kandy-tile-icon.svg" alt="" style="width:23px;height:23px;border-radius:6px"> <span>Install KANDY TILE</span>';
-    installButton.style.cssText = 'position:fixed;right:16px;bottom:18px;z-index:2147483000;display:flex;align-items:center;gap:9px;padding:11px 15px;border:1px solid #d8b56d;border-radius:999px;background:linear-gradient(135deg,#153c4a,#071c29);color:#fff;font:700 13px Arial,sans-serif;box-shadow:0 6px 22px #00182455;cursor:pointer';
+    installButton.style.cssText = 'position:fixed;left:18px;right:auto;bottom:20px;z-index:2147483000;display:flex;align-items:center;gap:9px;padding:11px 15px;border:1px solid #d8b56d;border-radius:999px;background:linear-gradient(135deg,#153c4a,#071c29);color:#fff;font:700 13px Arial,sans-serif;box-shadow:0 6px 22px #00182455;cursor:pointer';
     installButton.addEventListener('click', async function(){
       if (installPrompt) {
         installPrompt.prompt();
