@@ -17,7 +17,7 @@
     form.innerHTML = '<input type="text" id="cloud-email" autocomplete="username" placeholder="Username" required><input type="password" id="password" autocomplete="current-password" placeholder="Password" minlength="6" required><button class="primary" id="cloud-login" type="submit">Sign in</button>';
     const note = document.createElement('p');
     note.className = 'notice';
-    note.textContent = 'Admin access is restricted to the approved email address. Mobile/SMS login will be added later.';
+    note.textContent = 'Sign in with your username and password. Main Admin (amaan) and staff accounts created by Main Admin are allowed.';
     adminPanel.appendChild(note);
     const seed = document.createElement('button');
     seed.id = 'cloud-seed';
