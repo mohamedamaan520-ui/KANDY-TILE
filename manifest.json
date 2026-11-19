@@ -12,7 +12,13 @@
       "src": "./kandy-tile-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
+  ],
+  "id": "./",
+  "lang": "en",
+  "categories": [
+    "shopping",
+    "lifestyle"
   ]
 }
