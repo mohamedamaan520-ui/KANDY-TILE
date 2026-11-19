@@ -730,37 +730,102 @@
 })();
 
 
-/* KANDY TILE logo click: return to the public home page. */
+/* KANDY TILE logo click: return to the public home page (viewer + admin). */
 (function addKandyLogoHomeLink(){
-  if (window.__kandyLogoHomeLinkV1) return;
-  window.__kandyLogoHomeLinkV1 = true;
-
+  if (window.__kandyLogoHomeLinkV2) return;
+  window.__kandyLogoHomeLinkV2 = true;
+  const selectors = [
+    '.kandy-admin-brand', '.kandy-logo', '.site-logo', '.brand-logo',
+    '#logo', '#site-logo', '[data-home-logo]', 'header .logo', 'nav .logo',
+    'header [class*="brand" i]', 'header [class*="logo" i]',
+    'nav [class*="brand" i]', 'nav [class*="logo" i]',
+    'header img', 'header svg', 'nav img[alt*="kandy" i]',
+    'a[aria-label*="logo" i]', 'img[alt*="logo" i]',
+    'img[alt*="kandy" i]', 'img[src*="logo" i]'
+  ];
+  const selector = selectors.join(',');
   const style = document.createElement('style');
-  style.textContent = [
-    '.kandy-admin-brand, .kandy-logo, .site-logo, .brand-logo, #logo, #site-logo { cursor:pointer; }',
-    '.kandy-admin-brand:focus-visible, .kandy-logo:focus-visible, .site-logo:focus-visible, .brand-logo:focus-visible, #logo:focus-visible, #site-logo:focus-visible { outline:3px solid #d8b56d; outline-offset:4px; }'
-  ].join('\\n');
+  style.textContent = selector + '{cursor:pointer}' +
+    selector + ':focus-visible{outline:3px solid #d8b56d;outline-offset:4px}';
   document.head.appendChild(style);
-
-  function isLogoTarget(target) {
-    if (!target || !target.closest) return false;
-    return !!target.closest(
-      '.kandy-admin-brand, .kandy-logo, .site-logo, .brand-logo, #logo, #site-logo, ' +
-      '[data-home-logo], header .logo, nav .logo, a[aria-label*="logo" i], ' +
-      'img[alt*="logo" i], img[alt*="kandy" i], img[src*="logo" i]'
-    );
-  }
-
-  document.addEventListener('click', function(event) {
-    if (!isLogoTarget(event.target)) return;
-    const logo = event.target.closest(
-      '.kandy-admin-brand, .kandy-logo, .site-logo, .brand-logo, #logo, #site-logo, ' +
-      '[data-home-logo], header .logo, nav .logo, a[aria-label*="logo" i], ' +
-      'img[alt*="logo" i], img[alt*="kandy" i], img[src*="logo" i]'
-    );
+  function goHome(event) {
+    const logo = event.target && event.target.closest ? event.target.closest(selector) : null;
     if (!logo) return;
+    // Do not hijack unrelated images/icons inside navigation controls.
+    if (logo.closest('button,[role="button"]') && !logo.matches('img,svg')) return;
     event.preventDefault();
     event.stopPropagation();
-    window.location.href = new URL('./', window.location.href).href;
-  }, true);
+    const home = new URL('./', window.location.href);
+    window.location.assign(home.href);
+  }
+  document.addEventListener('click', goHome, true);
+})();
+
+
+/* KANDY TILE installable app (PWA) — works on supported phones and PCs. */
+(function kandyTileInstallableApp(){
+  if (window.__kandyTilePwaV1) return;
+  window.__kandyTilePwaV1 = true;
+
+  const manifest = document.createElement('link');
+  manifest.rel = 'manifest';
+  manifest.href = new URL('./manifest.json', window.location.href).href;
+  document.head.appendChild(manifest);
+
+  const theme = document.createElement('meta');
+  theme.name = 'theme-color';
+  theme.content = '#153c4a';
+  document.head.appendChild(theme);
+
+  const apple = document.createElement('meta');
+  apple.name = 'apple-mobile-web-app-capable';
+  apple.content = 'yes';
+  document.head.appendChild(apple);
+
+  const appleTitle = document.createElement('meta');
+  appleTitle.name = 'apple-mobile-web-app-title';
+  appleTitle.content = 'KANDY TILE';
+  document.head.appendChild(appleTitle);
+
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register(new URL('./service-worker.js', window.location.href), {scope:'./'})
+        .catch(function(error){ console.warn('KANDY TILE app setup:', error); });
+    }, {once:true});
+  }
+
+  let installPrompt = null;
+  let installButton = null;
+  function makeInstallButton(){
+    if (installButton || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) return;
+    installButton = document.createElement('button');
+    installButton.type = 'button';
+    installButton.id = 'kandy-install-app';
+    installButton.innerHTML = '<img src="./kandy-tile-icon.svg" alt="" style="width:23px;height:23px;border-radius:6px"> <span>Install KANDY TILE</span>';
+    installButton.style.cssText = 'position:fixed;right:16px;bottom:18px;z-index:2147483000;display:flex;align-items:center;gap:9px;padding:11px 15px;border:1px solid #d8b56d;border-radius:999px;background:linear-gradient(135deg,#153c4a,#071c29);color:#fff;font:700 13px Arial,sans-serif;box-shadow:0 6px 22px #00182455;cursor:pointer';
+    installButton.addEventListener('click', async function(){
+      if (installPrompt) {
+        installPrompt.prompt();
+        try { await installPrompt.userChoice; } catch (_) {}
+        installPrompt = null;
+        installButton.remove();
+        installButton = null;
+      } else {
+        alert('To install KANDY TILE:\n\nAndroid: Open browser menu (⋮) and choose Install app / Add to Home screen.\niPhone: Tap Share and choose Add to Home Screen.\nWindows PC: Click the Install icon in the browser address bar, or open the browser menu and choose Apps → Install this site as an app.');
+      }
+    });
+    document.body.appendChild(installButton);
+  }
+  window.addEventListener('beforeinstallprompt', function(event){
+    event.preventDefault();
+    installPrompt = event;
+    makeInstallButton();
+  });
+  window.addEventListener('appinstalled', function(){
+    if (installButton) installButton.remove();
+    installButton = null;
+    installPrompt = null;
+  });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', makeInstallButton, {once:true});
+  else makeInstallButton();
 })();
