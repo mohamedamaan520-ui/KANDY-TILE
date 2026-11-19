@@ -1082,7 +1082,7 @@
     hero.classList.add('kandy-public-colour-hero');
     const style = document.createElement('style');
     style.id = 'kandy-public-hero-colour-style';
-    style.textContent = \`
+    style.textContent = `
       .kandy-public-colour-hero h1{
         font-family:Arial,Helvetica,sans-serif!important;
         font-weight:900!important;
@@ -1117,7 +1117,7 @@
       .kandy-public-colour-hero a:not([href^="tel:"]):not([href*="wa.me"]):not([href*="whatsapp"]):hover{
         filter:brightness(1.16)!important;
       }
-    \`;
+    `;
     document.head.appendChild(style);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',apply,{once:true});
