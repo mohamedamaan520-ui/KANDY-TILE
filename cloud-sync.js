@@ -162,28 +162,53 @@
   }
 
   async function loadCloudCatalogue() {
-    const [tileResult, folderResult, categoryResult] = await Promise.all([
-      client.from('catalog_tiles').select('*').order('sort_order'),
-      client.from('catalog_folders').select('*').order('sort_order'),
-      client.from('catalog_categories').select('*').order('sort_order')
-    ]);
-    if (tileResult.error) throw tileResult.error;
-    if (folderResult.error) throw folderResult.error;
-    if (categoryResult.error) throw categoryResult.error;
-    catalogCategories = categoryResult.data || [];
-    const rows = tileResult.data || [];
+    // Read the complete shared catalogue in explicit pages so the public view
+    // never falls back to the old embedded 87-design sample due to row limits.
+    const pageSize = 500;
+    let rows = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await client
+        .from('catalog_tiles')
+        .select('*')
+        .order('sort_order')
+        .range(from, from + pageSize - 1);
+      if (error) throw error;
+      const page = data || [];
+      rows = rows.concat(page);
+      if (page.length < pageSize) break;
+      from += pageSize;
+    }
     if (!rows.length) return false;
+
+    // Folder metadata is optional for rendering: derive every folder from
+    // the tile rows if its metadata query is temporarily unavailable.
+    let folderNames = [];
+    try {
+      const { data, error } = await client
+        .from('catalog_folders')
+        .select('name')
+        .order('sort_order');
+      if (!error && Array.isArray(data)) folderNames = data.map(row => row.name).filter(Boolean);
+    } catch (_) {}
+    const fromTiles = rows.map(row => row.folder).filter(Boolean);
+    folders = [...new Set([...folderNames, ...fromTiles])];
+
+    // Categories are deliberately not part of the customer catalogue view.
+    catalogCategories = [];
     tiles = rows.map(row => {
       const { data } = client.storage.from(BUCKET).getPublicUrl(row.image_path);
       return {
-        id: row.id, folder: row.folder, category: row.category || 'Tiles', number: row.tile_number,
-        code: row.product_code, image: data.publicUrl, cloudPath: row.image_path
+        id: row.id, folder: row.folder, category: row.category || 'Tiles',
+        number: row.tile_number, code: row.product_code,
+        image: data.publicUrl, cloudPath: row.image_path
       };
     });
-    folders = (folderResult.data || []).map(row => row.name);
-    active = folders.includes(active) || active === 'All Collections' ? active : 'All Collections';
+    active = 'All Collections';
+    activeCategory = null;
     if (typeof renderAdmin === 'function' && isCloudAdmin) renderAdmin();
     if (typeof view === 'function') view();
+    console.info('KANDY TILE cloud catalogue loaded:', tiles.length, 'designs in', folders.length, 'folders');
     return true;
   }
 
