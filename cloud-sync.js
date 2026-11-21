@@ -2021,3 +2021,44 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
  new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* User request: keep the supplied black/gold bathroom banner, remove tile/product image from inside banner only. */
+(function removeTileImageFromPublicBannerOnly(){
+ if(window.__kandyRemoveTileImageFromPublicBannerV1)return;
+ window.__kandyRemoveTileImageFromPublicBannerV1=true;
+ function apply(){
+  const hero=document.querySelector('.kandy-public-colour-hero');
+  if(!hero)return;
+  if(!document.getElementById('kandy-remove-tile-image-banner-only-style')){
+   const st=document.createElement('style');
+   st.id='kandy-remove-tile-image-banner-only-style';
+   st.textContent=`
+    .kandy-public-colour-hero img,
+    .kandy-public-colour-hero picture,
+    .kandy-public-colour-hero .tile-image,
+    .kandy-public-colour-hero [class*="tile-image"],
+    .kandy-public-colour-hero [class*="product-image"]{
+     display:none!important;
+    }
+    .kandy-public-colour-hero{
+     background-color:#000!important;
+    }
+    .kandy-public-colour-hero:after{
+     display:block!important;
+     width:46%!important;
+    }
+    .kandy-public-colour-hero p{
+     max-width:60%!important;
+    }
+    @media(max-width:480px){
+     .kandy-public-colour-hero:after{width:44%!important}
+     .kandy-public-colour-hero p{max-width:62%!important}
+    }
+   `;
+   document.head.appendChild(st);
+  }
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+ new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
+})();
