@@ -1261,3 +1261,54 @@
  const ob=new MutationObserver(()=>apply());ob.observe(document.documentElement,{childList:true,subtree:true});
  window.addEventListener('resize',apply,{passive:true});
 })();
+
+
+/* Subtle premium polish for the public banner only. */
+(function polishPublicBannerOnly(){
+ if(window.__kandyPublicBannerPolishV1)return;
+ window.__kandyPublicBannerPolishV1=true;
+ function apply(){
+  if(document.getElementById('kandy-public-banner-polish-style'))return;
+  const st=document.createElement('style');
+  st.id='kandy-public-banner-polish-style';
+  st.textContent=`
+   .kandy-public-intro-cover-gold{
+    padding:clamp(18px,3vw,34px)!important;
+    background:
+     radial-gradient(ellipse at 50% -12%,rgba(245,211,132,.16),transparent 48%),
+     radial-gradient(ellipse at 88% 72%,rgba(176,132,47,.17),transparent 34%),
+     linear-gradient(135deg,rgba(255,255,255,.025),transparent 34%,rgba(226,187,99,.055) 70%,transparent),
+     linear-gradient(115deg,#030303 0%,#12110e 52%,#050505 100%)!important;
+    border:1px solid rgba(229,194,116,.66)!important;
+    box-shadow:0 20px 48px rgba(0,0,0,.38),0 0 24px rgba(193,151,65,.12),inset 0 1px 0 rgba(255,239,196,.22),inset 0 -1px 0 rgba(178,133,48,.24)!important;
+   }
+   .kandy-public-intro-cover-gold h1,
+   .kandy-public-intro-cover-gold h2,
+   .kandy-public-intro-cover-gold h3{
+    color:#f4d98d!important;
+    text-shadow:0 2px 14px rgba(230,190,94,.22)!important;
+    letter-spacing:.025em!important;
+   }
+   .kandy-public-intro-cover-gold p,
+   .kandy-public-intro-cover-gold small,
+   .kandy-public-intro-cover-gold span{
+    text-shadow:0 1px 8px rgba(0,0,0,.24);
+   }
+   .kandy-public-intro-cover-gold a[href^="tel:"],
+   .kandy-public-intro-cover-gold a[href*="wa.me"],
+   .kandy-public-intro-cover-gold a[href*="whatsapp"]{
+    border:1px solid rgba(235,199,117,.78)!important;
+    background:linear-gradient(135deg,#201b10,#090909)!important;
+    color:#ffe9b2!important;
+    box-shadow:0 5px 16px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,239,196,.16)!important;
+   }
+   .kandy-public-intro-cover-gold img{
+    border-color:rgba(221,184,101,.42)!important;
+    box-shadow:0 10px 26px rgba(0,0,0,.32)!important;
+   }
+  `;
+  document.head.appendChild(st);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+ const ob=new MutationObserver(()=>apply());ob.observe(document.documentElement,{childList:true,subtree:true});
+})();
