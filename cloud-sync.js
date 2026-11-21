@@ -2119,14 +2119,14 @@
    heading.style.cssText='align-self:center;padding:9px 12px;color:#252525';
    bar.appendChild(heading);
    foldersBox.replaceChildren();
-   const allCount=Array.isArray(window.tiles)?window.tiles.length:0;
+   const allCount=Array.isArray(tiles)?tiles.length:0;
    foldersBox.appendChild(makeButton('All Tile Folder ('+allCount+')','folder',()=>{
-    window.active='All Collections';stage='items';originalView();renderFlow();
+    active='All Collections';stage='items';originalView();renderFlow();
    }));
-   (Array.isArray(window.folders)?window.folders:[]).forEach(folder=>{
-    const count=Array.isArray(window.tiles)?window.tiles.filter(t=>t.folder===folder).length:0;
+   (Array.isArray(folders)?folders:[]).forEach(folder=>{
+    const count=Array.isArray(tiles)?tiles.filter(t=>t.folder===folder).length:0;
     foldersBox.appendChild(makeButton(folder+' ('+count+')','folder',()=>{
-     window.active=folder;stage='items';originalView();renderFlow();
+     active=folder;stage='items';originalView();renderFlow();
     }));
    });
    foldersBox.style.display='flex';
@@ -2136,13 +2136,13 @@
    return;
   }
   bar.appendChild(makeButton('‹ Categories','kandy-category-back',()=>{
-   stage='categories';window.active='All Collections';originalView();renderFlow();
+   stage='categories';active='All Collections';originalView();renderFlow();
   }));
   bar.appendChild(makeButton('‹ All folders','kandy-category-back',()=>{
    stage='folders';originalView();renderFlow();
   }));
   const heading=document.createElement('strong');
-  heading.textContent=window.active==='All Collections'?'All Tile Items':String(window.active);
+  heading.textContent=active==='All Collections'?'All Tile Items':String(active);
   heading.style.cssText='align-self:center;padding:9px 12px;color:#252525';
   bar.appendChild(heading);
   foldersBox.style.display='none';
@@ -2150,7 +2150,7 @@
   if(grid)grid.style.display='';
   if(empty)empty.style.display='';
   const title=$id('collection-title');
-  if(title)title.textContent=window.active==='All Collections'?'All Tile Items':String(window.active);
+  if(title)title.textContent=active==='All Collections'?'All Tile Items':String(active);
  }
  const css=document.createElement('style');
  css.id='kandy-customer-category-folder-flow-style';
