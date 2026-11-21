@@ -2170,7 +2170,7 @@
   const folderList=$('kandy-folder-list-v2');if(folderList){folderList.replaceChildren();allCategories().forEach(cat=>{const head=document.createElement('strong');head.textContent=cat;folderList.append(head);categoryFolders(cat).forEach(folder=>{const row=document.createElement('div');row.className='cat-row';const label=document.createElement('span');label.textContent=folder+' ('+tiles.filter(t=>(t.category||'Tiles')===cat&&t.folder===folder).length+')';const edit=button('Edit','',()=>{const next=prompt('Edit folder name:',folder)?.trim();if(!next||next===folder)return;if(folders.includes(next))return alert('Folder name already exists.');rows().forEach(x=>{if(x.collection===cat&&x.name===folder)x.name=next});tiles.forEach(t=>{if((t.category||'Tiles')===cat&&t.folder===folder)t.folder=next});folders=folders.map(f=>f===folder?next:f);saveNow();buildAdmin();renderCustomerFlow()});const del=button('Delete','',()=>{if(tiles.some(t=>(t.category||'Tiles')===cat&&t.folder===folder))return alert('This folder still contains designs. Move or delete them first.');if(!confirm('Delete empty folder '+folder+'?'))return;window.kandyCatalogCategories=rows().filter(x=>!(x.collection===cat&&x.name===folder));folders=folders.filter(f=>f!==folder);saveNow();buildAdmin()});row.append(label,edit,del);folderList.append(row)})})}
  }
  const oldRender=window.renderAdmin;
- if(typeof oldRender==='function')window.renderAdmin=function(){oldRender();buildAdmin()};
+ if(typeof oldRender==='function')window.renderAdmin=function(){oldRender();buildAdmin();attachAdminCategoryField()};
  const form=$('tile-form');
  if(form&&typeof form.onsubmit==='function'){
   const oldSubmit=form.onsubmit;
@@ -2190,6 +2190,5 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{ensureRows();renderFeatured();renderCustomerFlow();buildAdmin();attachAdminCategoryField()},{once:true});
  else{ensureRows();renderFeatured();renderCustomerFlow();buildAdmin();attachAdminCategoryField()}
  if(featuredTimer)clearInterval(featuredTimer);featuredTimer=setInterval(renderFeatured,120000);
- const observer=new MutationObserver(()=>{buildAdmin();attachAdminCategoryField()});
- observer.observe(document.documentElement,{childList:true,subtree:true});
+
 })();
