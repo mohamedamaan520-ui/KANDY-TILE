@@ -2149,7 +2149,7 @@
    let tile=img?(byUrl.get(normUrl(img.currentSrc||img.src))||byUrl.get(normUrl(img.getAttribute('src')))):null;
    if(!tile){const id=card.dataset?.id||card.getAttribute('data-id')||card.dataset?.tileId;if(id!=null)tile=byId.get(String(id));}
    if(!tile&&img)tile=list.find(t=>t&&t.image&&normUrl(t.image)===normUrl(img.getAttribute('src')));
-   const show=!!selected&&!!tile&&clean(tile.folder)===selected;
+   const show=!selected||selected==='All Folders'||selected==='All Collections'||selected==='All'||(!!tile&&clean(tile.folder)===selected);
    card.hidden=!show;card.style.display=show?'':'none';
   });
  }
