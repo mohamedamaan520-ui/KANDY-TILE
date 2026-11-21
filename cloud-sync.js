@@ -1312,3 +1312,85 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
  const ob=new MutationObserver(()=>apply());ob.observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* Complete visual redesign of the public banner only. */
+(function redesignPublicBannerOnly(){
+ if(window.__kandyPublicBannerFullRedesignV1)return;
+ window.__kandyPublicBannerFullRedesignV1=true;
+ function apply(){
+  if(document.getElementById('kandy-public-banner-full-redesign-style'))return;
+  const st=document.createElement('style');
+  st.id='kandy-public-banner-full-redesign-style';
+  st.textContent=`
+   .kandy-public-colour-hero,
+   .kandy-public-intro-cover-gold{
+    position:relative!important;isolation:isolate!important;overflow:hidden!important;
+    background:
+     radial-gradient(ellipse at 82% 18%,rgba(218,178,91,.20),transparent 30%),
+     radial-gradient(ellipse at 10% 100%,rgba(141,102,35,.15),transparent 38%),
+     linear-gradient(115deg,transparent 0 48%,rgba(241,210,143,.07) 48.2%,transparent 48.7%),
+     linear-gradient(155deg,#050505 0%,#17150f 48%,#070707 100%)!important;
+    border:1px solid rgba(221,184,101,.72)!important;
+    border-radius:22px!important;
+    box-shadow:0 24px 55px rgba(0,0,0,.42),0 0 30px rgba(203,163,79,.13),inset 0 1px 0 rgba(255,240,199,.24),inset 0 -1px 0 rgba(180,135,53,.28)!important;
+   }
+   .kandy-public-colour-hero:before,
+   .kandy-public-intro-cover-gold:before{
+    content:"";position:absolute;inset:8px;border:1px solid rgba(223,187,108,.24);
+    border-radius:15px;pointer-events:none;z-index:0;
+   }
+   .kandy-public-colour-hero:after,
+   .kandy-public-intro-cover-gold:after{
+    content:"";position:absolute;left:7%;right:7%;top:0;height:2px;pointer-events:none;z-index:0;
+    background:linear-gradient(90deg,transparent,#9e762e 18%,#fff0b9 50%,#9e762e 82%,transparent);
+    box-shadow:0 0 16px rgba(245,211,132,.58);
+   }
+   .kandy-public-colour-hero>*,
+   .kandy-public-intro-cover-gold>*{position:relative;z-index:1}
+   .kandy-public-colour-hero h1,
+   .kandy-public-intro-cover-gold h1{
+    color:#fff0bd!important;
+    background:linear-gradient(100deg,#fff9e8 0%,#e8c66e 42%,#fff0bd 72%,#bd9140 100%);
+    -webkit-background-clip:text!important;background-clip:text!important;
+    -webkit-text-fill-color:transparent!important;
+    letter-spacing:.045em!important;
+    text-shadow:0 5px 25px rgba(218,177,83,.18)!important;
+   }
+   .kandy-public-colour-hero h2,.kandy-public-colour-hero h3,
+   .kandy-public-intro-cover-gold h2,.kandy-public-intro-cover-gold h3{
+    color:#e9ca83!important;letter-spacing:.025em!important;
+   }
+   .kandy-public-colour-hero p,.kandy-public-intro-cover-gold p{
+    color:rgba(255,249,232,.88)!important;
+   }
+   .kandy-public-colour-hero a[href^="tel:"],
+   .kandy-public-colour-hero a[href*="wa.me"],
+   .kandy-public-colour-hero a[href*="whatsapp"],
+   .kandy-public-intro-cover-gold a[href^="tel:"],
+   .kandy-public-intro-cover-gold a[href*="wa.me"],
+   .kandy-public-intro-cover-gold a[href*="whatsapp"]{
+    background:linear-gradient(135deg,#e9cb82 0%,#b68a3b 52%,#f6e2a8 100%)!important;
+    color:#17120a!important;border:1px solid #f8e7b5!important;
+    border-radius:999px!important;font-weight:800!important;
+    box-shadow:0 8px 20px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.52)!important;
+   }
+   .kandy-public-colour-hero img,.kandy-public-intro-cover-gold img{
+    border:1px solid rgba(231,198,126,.62)!important;
+    border-radius:14px!important;
+    box-shadow:0 14px 32px rgba(0,0,0,.42),0 0 0 4px rgba(216,177,91,.07)!important;
+   }
+   .kandy-public-intro-cover-gold .kandy-public-intro-info-flat{
+    background:transparent!important;border-color:transparent!important;box-shadow:none!important;
+   }
+   @media(max-width:640px){
+    .kandy-public-colour-hero,.kandy-public-intro-cover-gold{border-radius:16px!important}
+    .kandy-public-colour-hero:before,.kandy-public-intro-cover-gold:before{inset:5px;border-radius:11px}
+   }
+  `;
+  document.head.appendChild(st);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+ const observer=new MutationObserver(()=>apply());
+ observer.observe(document.documentElement,{childList:true,subtree:true});
+})();
