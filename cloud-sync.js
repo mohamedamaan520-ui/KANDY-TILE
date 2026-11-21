@@ -2062,3 +2062,113 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
  new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* Customer catalogue navigation: Category -> Folders -> Items.
+   Admin screens, catalogue records, images and Supabase data are untouched. */
+(function kandyCustomerCategoryFolderFlowOnly(){
+ if(window.__kandyCustomerCategoryFolderFlowV1)return;
+ window.__kandyCustomerCategoryFolderFlowV1=true;
+ const originalView=window.view;
+ if(typeof originalView!=='function')return;
+ let stage='categories';
+ let nav=null;
+ const $id=id=>document.getElementById(id);
+ function makeButton(label,cls,handler){
+  const b=document.createElement('button');
+  b.type='button';b.className=cls;b.textContent=label;b.addEventListener('click',handler);
+  return b;
+ }
+ function ensureNav(){
+  if(nav&&nav.isConnected)return nav;
+  const foldersBox=$id('folders');
+  if(!foldersBox)return null;
+  nav=document.createElement('div');
+  nav.id='kandy-customer-category-nav';
+  nav.style.cssText='display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:0 0 16px';
+  foldersBox.parentNode.insertBefore(nav,foldersBox);
+  return nav;
+ }
+ function setVisible(id,visible){
+  const el=$id(id);if(el)el.style.display=visible?'':'none';
+ }
+ function renderFlow(){
+  const foldersBox=$id('folders');
+  const toolbar=document.querySelector('main .toolbar');
+  const grid=$id('grid');
+  const empty=$id('empty');
+  const bar=ensureNav();
+  if(!foldersBox||!bar)return;
+  bar.replaceChildren();
+  if(stage==='categories'){
+   bar.appendChild(makeButton('Tiles','kandy-category-card',()=>{
+    stage='folders';renderFlow();
+   }));
+   foldersBox.style.display='none';
+   if(toolbar)toolbar.style.display='none';
+   if(grid)grid.style.display='none';
+   if(empty)empty.style.display='none';
+   return;
+  }
+  if(stage==='folders'){
+   bar.appendChild(makeButton('‹ Categories','kandy-category-back',()=>{
+    stage='categories';renderFlow();
+   }));
+   const heading=document.createElement('strong');
+   heading.textContent='Tiles';
+   heading.style.cssText='align-self:center;padding:9px 12px;color:#252525';
+   bar.appendChild(heading);
+   foldersBox.replaceChildren();
+   const allCount=Array.isArray(window.tiles)?window.tiles.length:0;
+   foldersBox.appendChild(makeButton('All Tile Folder ('+allCount+')','folder',()=>{
+    window.active='All Collections';stage='items';originalView();renderFlow();
+   }));
+   (Array.isArray(window.folders)?window.folders:[]).forEach(folder=>{
+    const count=Array.isArray(window.tiles)?window.tiles.filter(t=>t.folder===folder).length:0;
+    foldersBox.appendChild(makeButton(folder+' ('+count+')','folder',()=>{
+     window.active=folder;stage='items';originalView();renderFlow();
+    }));
+   });
+   foldersBox.style.display='flex';
+   if(toolbar)toolbar.style.display='none';
+   if(grid)grid.style.display='none';
+   if(empty)empty.style.display='none';
+   return;
+  }
+  bar.appendChild(makeButton('‹ Categories','kandy-category-back',()=>{
+   stage='categories';window.active='All Collections';originalView();renderFlow();
+  }));
+  bar.appendChild(makeButton('‹ All folders','kandy-category-back',()=>{
+   stage='folders';originalView();renderFlow();
+  }));
+  const heading=document.createElement('strong');
+  heading.textContent=window.active==='All Collections'?'All Tile Items':String(window.active);
+  heading.style.cssText='align-self:center;padding:9px 12px;color:#252525';
+  bar.appendChild(heading);
+  foldersBox.style.display='none';
+  if(toolbar)toolbar.style.display='';
+  if(grid)grid.style.display='';
+  if(empty)empty.style.display='';
+  const title=$id('collection-title');
+  if(title)title.textContent=window.active==='All Collections'?'All Tile Items':String(window.active);
+ }
+ const css=document.createElement('style');
+ css.id='kandy-customer-category-folder-flow-style';
+ css.textContent=`
+  #kandy-customer-category-nav .kandy-category-card{
+   min-width:150px;padding:16px 22px;border:1px solid #c11224;border-radius:14px;
+   background:#c11224;color:#fff;font-weight:850;font-size:17px;text-align:left;
+   box-shadow:0 5px 16px rgba(193,18,36,.14)
+  }
+  #kandy-customer-category-nav .kandy-category-back{
+   padding:10px 14px;border:1px solid #ddd;border-radius:11px;background:#fff;
+   color:#252525;font-weight:750
+  }
+  #folders .folder{display:inline-flex;align-items:center;justify-content:center}
+ `;
+ document.head.appendChild(css);
+ window.view=function(){originalView();renderFlow();};
+ if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',renderFlow,{once:true});
+ }else renderFlow();
+})();
