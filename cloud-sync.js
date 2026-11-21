@@ -1603,10 +1603,10 @@
 })();
 
 
-/* Add a small admin icon beside the public Admin navigation label only. */
+/* Show a black admin icon above the Admin label in the public navigation only. */
 (function addPublicAdminLabelIcon(){
- if(window.__kandyPublicAdminIconV1)return;
- window.__kandyPublicAdminIconV1=true;
+ if(window.__kandyPublicAdminIconV2)return;
+ window.__kandyPublicAdminIconV2=true;
  function apply(){
   const controls=Array.from(document.querySelectorAll('a,button,[role="button"]'));
   controls.forEach(control=>{
@@ -1614,10 +1614,10 @@
    if(control.querySelector('.kandy-admin-nav-icon'))return;
    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
    svg.setAttribute('viewBox','0 0 24 24');
-   svg.setAttribute('width','17');svg.setAttribute('height','17');
+   svg.setAttribute('width','21');svg.setAttribute('height','21');
    svg.setAttribute('aria-hidden','true');svg.setAttribute('focusable','false');
    svg.classList.add('kandy-admin-nav-icon');
-   svg.innerHTML='<path d="M12 3 20 6v5.2c0 5-3.4 8.4-8 10.8-4.6-2.4-8-5.8-8-10.8V6l8-3Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="9" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8.5 16c.6-2 1.8-3 3.5-3s2.9 1 3.5 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>';
+   svg.innerHTML='<path d="M12 3 20 6v5.2c0 5-3.4 8.4-8 10.8-4.6-2.4-8-5.8-8-10.8V6l8-3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="9" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 16c.6-2 1.8-3 3.5-3s2.9 1 3.5 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>';
    const wrap=document.createElement('span');
    wrap.className='kandy-admin-icon-wrap';
    wrap.setAttribute('aria-hidden','true');
@@ -1628,7 +1628,7 @@
   if(!document.getElementById('kandy-admin-nav-icon-style')){
    const style=document.createElement('style');
    style.id='kandy-admin-nav-icon-style';
-   style.textContent='.kandy-admin-icon-added{display:inline-flex!important;align-items:center!important;gap:7px!important}.kandy-admin-icon-wrap{display:inline-flex!important;align-items:center!important;justify-content:center!important;color:#d8b45f!important;flex:0 0 auto!important}.kandy-admin-nav-icon{display:block!important;filter:drop-shadow(0 1px 3px rgba(0,0,0,.25))}';
+   style.textContent='.kandy-admin-icon-added{display:inline-flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important}.kandy-admin-icon-wrap{display:flex!important;align-items:center!important;justify-content:center!important;color:#000!important;flex:0 0 auto!important}.kandy-admin-nav-icon{display:block!important;filter:none!important}';
    document.head.appendChild(style);
   }
  }
