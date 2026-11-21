@@ -1394,3 +1394,113 @@
  const observer=new MutationObserver(()=>apply());
  observer.observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* Responsive full hero-banner redesign: desktop and mobile. */
+(function responsiveFullHeroBannerRedesign(){
+ if(window.__kandyResponsiveHeroRedesignV1)return;
+ window.__kandyResponsiveHeroRedesignV1=true;
+ function apply(){
+  if(document.getElementById('kandy-responsive-hero-redesign-style'))return;
+  const st=document.createElement('style');
+  st.id='kandy-responsive-hero-redesign-style';
+  st.textContent=`
+   .kandy-public-colour-hero{
+    --kandy-gold:#e7c77d;
+    position:relative!important;isolation:isolate!important;overflow:hidden!important;
+    display:flex!important;flex-direction:column!important;justify-content:center!important;
+    gap:clamp(14px,2.2vw,26px)!important;
+    box-sizing:border-box!important;
+    width:100%!important;max-width:100%!important;
+    min-height:clamp(360px,40vw,540px)!important;
+    padding:clamp(34px,5.2vw,76px) clamp(22px,6vw,88px)!important;
+    margin:clamp(16px,3vw,34px) auto!important;
+    border:1px solid rgba(231,199,125,.66)!important;
+    border-radius:clamp(18px,2.5vw,30px)!important;
+    background:
+     radial-gradient(ellipse at 82% 20%,rgba(231,199,125,.22),transparent 30%),
+     radial-gradient(ellipse at 12% 90%,rgba(166,120,43,.17),transparent 36%),
+     linear-gradient(115deg,transparent 0 46%,rgba(255,231,175,.055) 46.2%,transparent 46.8%),
+     linear-gradient(135deg,#030405 0%,#15130f 48%,#080808 100%)!important;
+    box-shadow:0 24px 60px rgba(0,0,0,.42),0 0 34px rgba(204,164,78,.12),inset 0 1px 0 rgba(255,241,205,.22)!important;
+   }
+   .kandy-public-colour-hero:before{
+    content:"";position:absolute;inset:10px;border:1px solid rgba(231,199,125,.22);
+    border-radius:calc(clamp(18px,2.5vw,30px) - 7px);pointer-events:none;z-index:0;
+   }
+   .kandy-public-colour-hero:after{
+    content:"";position:absolute;left:8%;right:8%;top:0;height:2px;pointer-events:none;z-index:0;
+    background:linear-gradient(90deg,transparent,#a77e36 18%,#fff0bd 50%,#a77e36 82%,transparent);
+    box-shadow:0 0 18px rgba(245,211,132,.62);
+   }
+   .kandy-public-colour-hero>*{position:relative;z-index:1;max-width:100%}
+   .kandy-public-colour-hero h1{
+    margin:0!important;font-size:clamp(2.15rem,5.2vw,5rem)!important;
+    line-height:1.04!important;font-weight:900!important;letter-spacing:.045em!important;
+    color:#f4d98d!important;
+    background:linear-gradient(100deg,#fff9e8 0%,#e7c36b 42%,#fff0bd 72%,#bd9140 100%);
+    -webkit-background-clip:text!important;background-clip:text!important;
+    -webkit-text-fill-color:transparent!important;
+    text-shadow:0 6px 28px rgba(218,177,83,.18)!important;
+   }
+   .kandy-public-colour-hero p{
+    max-width:760px!important;font-size:clamp(.98rem,1.35vw,1.18rem)!important;
+    line-height:1.75!important;color:rgba(255,249,232,.88)!important;
+   }
+   .kandy-public-colour-hero a[href^="tel:"],
+   .kandy-public-colour-hero a[href*="wa.me"],
+   .kandy-public-colour-hero a[href*="whatsapp"]{
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;
+    gap:9px!important;min-height:46px!important;padding:11px 21px!important;
+    border-radius:999px!important;border:1px solid #f4dfa9!important;
+    background:linear-gradient(135deg,#f0d796 0%,#bd9144 52%,#f8e8b9 100%)!important;
+    color:#171109!important;font-weight:850!important;letter-spacing:.01em!important;
+    box-shadow:0 9px 22px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.55)!important;
+    transition:transform .2s ease,filter .2s ease,box-shadow .2s ease!important;
+   }
+   .kandy-public-colour-hero a[href^="tel:"]:hover,
+   .kandy-public-colour-hero a[href*="wa.me"]:hover,
+   .kandy-public-colour-hero a[href*="whatsapp"]:hover{
+    transform:translateY(-2px)!important;filter:brightness(1.07)!important;
+    box-shadow:0 13px 26px rgba(0,0,0,.4)!important;
+   }
+   .kandy-public-colour-hero img{
+    max-width:100%!important;height:auto!important;object-fit:cover!important;
+    border:1px solid rgba(231,199,125,.62)!important;border-radius:16px!important;
+    box-shadow:0 16px 34px rgba(0,0,0,.4),0 0 0 5px rgba(216,177,91,.07)!important;
+   }
+   .kandy-public-colour-hero button{
+    border-radius:999px!important;transition:transform .2s ease,filter .2s ease!important;
+   }
+   @media(max-width:768px){
+    .kandy-public-colour-hero{
+     min-height:unset!important;gap:13px!important;
+     padding:32px 20px!important;margin:12px auto!important;
+     border-radius:19px!important;
+    }
+    .kandy-public-colour-hero:before{inset:6px;border-radius:13px}
+    .kandy-public-colour-hero h1{font-size:clamp(2rem,9vw,3.15rem)!important;line-height:1.08!important;letter-spacing:.025em!important}
+    .kandy-public-colour-hero p{font-size:1rem!important;line-height:1.65!important}
+    .kandy-public-colour-hero a[href^="tel:"],
+    .kandy-public-colour-hero a[href*="wa.me"],
+    .kandy-public-colour-hero a[href*="whatsapp"]{
+     min-height:44px!important;padding:10px 16px!important;font-size:.92rem!important;
+    }
+   }
+   @media(max-width:420px){
+    .kandy-public-colour-hero{padding:27px 15px!important;border-radius:16px!important}
+    .kandy-public-colour-hero h1{font-size:clamp(1.8rem,9.5vw,2.45rem)!important}
+    .kandy-public-colour-hero a[href^="tel:"],
+    .kandy-public-colour-hero a[href*="wa.me"],
+    .kandy-public-colour-hero a[href*="whatsapp"]{width:100%!important;box-sizing:border-box!important}
+   }
+   @media(prefers-reduced-motion:reduce){
+    .kandy-public-colour-hero *{transition:none!important}
+   }
+  `;
+  document.head.appendChild(st);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+ const observer=new MutationObserver(()=>apply());
+ observer.observe(document.documentElement,{childList:true,subtree:true});
+})();
