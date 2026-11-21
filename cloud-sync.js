@@ -1805,3 +1805,39 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
  new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* Make banner and its surrounding banner area exactly one seamless background. */
+(function oneSeamlessBannerBackground(){
+ if(window.__kandyOneSeamlessBannerBgV1)return;
+ window.__kandyOneSeamlessBannerBgV1=true;
+ function apply(){
+  const hero=document.querySelector('.kandy-public-colour-hero');
+  if(!hero)return;
+  const targets=[hero,hero.parentElement];
+  if(hero.parentElement && hero.parentElement.parentElement)targets.push(hero.parentElement.parentElement);
+  targets.filter(Boolean).forEach(el=>el.classList.add('kandy-one-seamless-banner-bg'));
+  if(!document.getElementById('kandy-one-seamless-banner-bg-style')){
+   const st=document.createElement('style');st.id='kandy-one-seamless-banner-bg-style';
+   st.textContent=`
+    .kandy-one-seamless-banner-bg{
+     background:
+      radial-gradient(ellipse at 8% 18%,rgba(190,25,43,.28),transparent 28%),
+      radial-gradient(ellipse at 88% 78%,rgba(220,178,83,.24),transparent 32%),
+      linear-gradient(125deg,rgba(196,27,47,.10) 0%,transparent 38%,rgba(218,177,82,.12) 72%,transparent 100%),
+      linear-gradient(135deg,#030303 0%,#11100d 48%,#050505 100%)!important;
+     background-color:#050505!important;
+     border:0!important;outline:0!important;box-shadow:none!important;
+    }
+    .kandy-public-colour-hero,
+    .kandy-public-colour-hero:before,
+    .kandy-public-colour-hero:after{
+     border:0!important;outline:0!important;box-shadow:none!important;
+    }
+   `;
+   document.head.appendChild(st);
+  }
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+ new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
+})();
