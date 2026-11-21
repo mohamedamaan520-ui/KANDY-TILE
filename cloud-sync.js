@@ -1200,81 +1200,64 @@
 })();
 
 
-/* Apply the black-and-gold finish to the complete public hero box, not just its text area. */
-(function stylePublicHeroOuterBox(){
-  if (window.__kandyPublicHeroOuterBoxV1) return;
-  window.__kandyPublicHeroOuterBoxV1 = true;
-  function apply(){
-    const heading = Array.from(document.querySelectorAll('h1,h2')).find(el =>
-      /REFLECT\\s+YOUR\\s+DREAM\\.?/i.test((el.textContent || '').trim())
-    );
-    if (!heading) return;
-    let contentBox = heading.parentElement;
-    while (contentBox && contentBox !== document.body) {
-      const txt = (contentBox.innerText || '').replace(/\\s+/g,' ');
-      if (/Explore our tile collections/i.test(txt) &&
-          /035\\s*222\\s*3333/.test(txt) &&
-          /071\\s*3?\\s*222\\s*888/.test(txt)) break;
-      contentBox = contentBox.parentElement;
-    }
-    if (!contentBox || contentBox === document.body) return;
-
-    // Find the widest compact ancestor that contains the complete hero content.
-    let box = contentBox;
-    let bestWidth = 0;
-    let node = contentBox;
-    for (let depth = 0; node && node !== document.body && depth < 5; depth++, node = node.parentElement) {
-      const rect = node.getBoundingClientRect();
-      const textLength = (node.innerText || '').trim().length;
-      if (rect.width >= Math.min(window.innerWidth * 0.78, 520) &&
-          rect.height >= 130 && rect.height <= 720 &&
-          textLength <= 1100 && rect.width > bestWidth) {
-        box = node;
-        bestWidth = rect.width;
-      }
-    }
-
-    box.classList.add('kandy-public-colour-hero-shell');
-    if (contentBox !== box) contentBox.classList.add('kandy-public-colour-hero-inner');
-
-    if (document.getElementById('kandy-public-hero-outer-box-style')) return;
-    const style = document.createElement('style');
-    style.id = 'kandy-public-hero-outer-box-style';
-    style.textContent = `
-      .kandy-public-colour-hero-shell{
-        position:relative!important;isolation:isolate!important;overflow:hidden!important;
-        box-sizing:border-box!important;
-        background:
-          linear-gradient(132deg,transparent 0 57%,rgba(221,180,83,.10) 57.2%,transparent 57.7%),
-          linear-gradient(42deg,transparent 0 72%,rgba(231,194,105,.16) 72.2%,transparent 72.7%),
-          radial-gradient(ellipse at 86% 48%,rgba(173,133,48,.18),transparent 38%),
-          linear-gradient(112deg,#050505 0%,#101010 58%,#050505 100%)!important;
-        border:1px solid rgba(211,174,91,.48)!important;
-        border-radius:24px!important;
-        box-shadow:0 18px 42px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,224,153,.18)!important;
-      }
-      .kandy-public-colour-hero-inner:not(.kandy-public-colour-hero-shell){
-        background:transparent!important;border:0!important;box-shadow:none!important;
-      }
-      .kandy-public-colour-hero-shell:before,
-      .kandy-public-colour-hero-shell:after{
-        content:"";position:absolute;z-index:0;pointer-events:none;height:2px;
-        background:linear-gradient(90deg,transparent,#f7dc8b,#b78b35,transparent);
-        filter:drop-shadow(0 0 7px rgba(245,205,105,.75));
-      }
-      .kandy-public-colour-hero-shell:before{left:0;right:34%;top:0;transform:skewY(-2deg)}
-      .kandy-public-colour-hero-shell:after{left:0;right:28%;bottom:0;transform:skewY(2deg)}
-      .kandy-public-colour-hero-shell > *,
-      .kandy-public-colour-hero-inner > *{position:relative;z-index:1}
-      @media(max-width:640px){
-        .kandy-public-colour-hero-shell{border-radius:20px!important}
-      }
-    `;
-    document.head.appendChild(style);
+/* Continuous black-and-gold background for public intro and tile-cover only. */
+(function stylePublicIntroAndCoverSection(){
+ if(window.__kandyPublicIntroCoverGoldV2)return;
+ window.__kandyPublicIntroCoverGoldV2=true;
+ const norm=v=>(v||'').replace(/\s+/g,' ').trim().toLowerCase();
+ function findText(test){
+  return Array.from(document.querySelectorAll('body *')).filter(e=>e.children.length===0&&test(norm(e.textContent))).sort((a,b)=>(a.textContent||'').length-(b.textContent||'').length)[0]||null;
+ }
+ function common(a,b){
+  if(!a||!b)return null;
+  const p=new Set();for(let n=a;n;n=n.parentElement)p.add(n);
+  for(let n=b;n;n=n.parentElement)if(p.has(n))return n;
+  return null;
+ }
+ function apply(){
+  if(document.getElementById('kandy-public-intro-cover-gold-style'))return;
+  const tests=[
+   t=>t.includes('search by tile number or product code'),
+   t=>t.includes('035 222 3333'),
+   t=>t.includes('071 3 222 888')||t.includes('071 222 888'),
+   t=>t.includes('160 tile designs')||t.includes('167 tile designs'),
+   t=>t.includes('rambukkana'),
+   t=>t.includes('mawanella'),
+   t=>t.includes('tile collection cover')
+  ];
+  const anchors=tests.map(findText).filter(Boolean);
+  if(anchors.length<5)return;
+  let section=anchors[0];
+  for(let j=1;j<anchors.length;j++)section=common(section,anchors[j]);
+  if(!section||section===document.body||section===document.documentElement)return;
+  let box=section;
+  for(let n=section;n&&n!==document.body;n=n.parentElement){
+   const r=n.getBoundingClientRect(),t=norm(n.innerText);
+   if(r.width>=Math.min(window.innerWidth*.82,560)&&r.height>=220&&r.height<=1600&&
+      t.includes('search by tile number or product code')&&t.includes('rambukkana')&&t.includes('mawanella')){box=n;break;}
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',apply,{once:true});
-  else apply();
-  const observer = new MutationObserver(() => apply());
-  observer.observe(document.documentElement,{childList:true,subtree:true});
-  window.addEventListener('resize',apply,{passive:true});
+  box.classList.add('kandy-public-intro-cover-gold');
+  anchors.slice(0,6).forEach(a=>{
+   let n=a;
+   for(let d=0;n&&n!==box&&d<5;d++,n=n.parentElement){
+    const r=n.getBoundingClientRect();
+    if(r.width>90&&r.width<box.getBoundingClientRect().width*.92&&r.height>18&&r.height<260){
+     n.classList.add('kandy-public-intro-info-flat');break;
+    }
+   }
+  });
+  const st=document.createElement('style');st.id='kandy-public-intro-cover-gold-style';
+  st.textContent='\
+.kandy-public-intro-cover-gold{position:relative!important;isolation:isolate!important;overflow:hidden!important;box-sizing:border-box!important;background:radial-gradient(ellipse at 84% 32%,rgba(190,148,62,.20),transparent 38%),radial-gradient(ellipse at 12% 88%,rgba(150,111,42,.13),transparent 42%),linear-gradient(135deg,transparent 0 56%,rgba(224,188,105,.10) 56.2%,transparent 56.8%),linear-gradient(42deg,transparent 0 74%,rgba(224,188,105,.12) 74.2%,transparent 74.8%),linear-gradient(115deg,#030303 0%,#11100d 52%,#050505 100%)!important;border:1px solid rgba(211,174,91,.48)!important;border-radius:24px!important;box-shadow:0 18px 44px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,224,153,.14)!important}\
+.kandy-public-intro-cover-gold:before,.kandy-public-intro-cover-gold:after{content:"";position:absolute;left:0;right:0;height:2px;pointer-events:none;z-index:0;background:linear-gradient(90deg,transparent 2%,#9c762e 22%,#f4d98d 50%,#9c762e 78%,transparent 98%);box-shadow:0 0 12px rgba(229,190,91,.42)}\
+.kandy-public-intro-cover-gold:before{top:0}.kandy-public-intro-cover-gold:after{bottom:0}\
+.kandy-public-intro-cover-gold>*{position:relative;z-index:1}\
+.kandy-public-intro-cover-gold .kandy-public-intro-info-flat{background:transparent!important;background-color:transparent!important;border-color:transparent!important;box-shadow:none!important;outline:0!important}\
+.kandy-public-intro-cover-gold .kandy-public-intro-info-flat:before,.kandy-public-intro-cover-gold .kandy-public-intro-info-flat:after{display:none!important}\
+@media(max-width:640px){.kandy-public-intro-cover-gold{border-radius:18px!important}}';
+  document.head.appendChild(st);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+ const ob=new MutationObserver(()=>apply());ob.observe(document.documentElement,{childList:true,subtree:true});
+ window.addEventListener('resize',apply,{passive:true});
 })();
