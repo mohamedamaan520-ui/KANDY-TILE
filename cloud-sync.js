@@ -1732,3 +1732,35 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
  new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* Remove banner outline and blend its immediate grey/red surround into the same theme. */
+(function blendBannerIntoSurroundingBackground(){
+ if(window.__kandyBannerBlendNoOutlineV1)return;
+ window.__kandyBannerBlendNoOutlineV1=true;
+ function apply(){
+  const hero=document.querySelector('.kandy-public-colour-hero');
+  if(!hero)return;
+  const parent=hero.parentElement;
+  if(parent)parent.classList.add('kandy-banner-blended-surround');
+  if(!document.getElementById('kandy-banner-blended-surround-style')){
+   const st=document.createElement('style');st.id='kandy-banner-blended-surround-style';
+   st.textContent=`
+    .kandy-public-colour-hero{
+     border:0!important;outline:0!important;
+     box-shadow:none!important;
+    }
+    .kandy-public-colour-hero:before{
+     border:0!important;outline:0!important;box-shadow:none!important;
+    }
+    .kandy-banner-blended-surround{
+     background:linear-gradient(135deg,#050505 0%,#17120e 52%,#080808 100%)!important;
+     border:0!important;outline:0!important;box-shadow:none!important;
+    }
+   `;
+   document.head.appendChild(st);
+  }
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+ new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
+})();
