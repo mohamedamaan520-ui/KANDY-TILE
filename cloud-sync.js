@@ -2119,16 +2119,23 @@
   const grid=gridElement(),names=folderNames();if(!grid||!names.length)return;
   let strip=document.getElementById('kandy-customer-folder-strip');
   if(!strip){strip=document.createElement('nav');strip.id='kandy-customer-folder-strip';strip.setAttribute('aria-label','Tile folders');grid.parentNode.insertBefore(strip,grid);}
-  strip.replaceChildren();
+  const signature=JSON.stringify(names);
+  if(strip.dataset.folderSignature!==signature){
+   strip.replaceChildren();
+   const back=document.createElement('button');back.type='button';back.className='kandy-folder-back';back.textContent='All Folders';
+   back.addEventListener('click',()=>{window.active='';if(typeof window.view==='function')window.view();});
+   strip.appendChild(back);
+   names.forEach(name=>{
+    const b=document.createElement('button');b.type='button';b.textContent=name;
+    b.addEventListener('click',()=>{window.active=name;if(typeof window.view==='function')window.view();});
+    strip.appendChild(b);
+   });
+   strip.dataset.folderSignature=signature;
+  }
   const selected=clean(window.active);
-  const back=document.createElement('button');back.type='button';back.className='kandy-folder-back';back.textContent='All Folders';
-  back.setAttribute('aria-pressed',String(!selected));
-  back.addEventListener('click',()=>{window.active='';if(typeof window.view==='function')window.view();});
-  strip.appendChild(back);
-  names.forEach(name=>{
-   const b=document.createElement('button');b.type='button';b.textContent=name;b.setAttribute('aria-pressed',String(selected===name));
-   b.addEventListener('click',()=>{window.active=name;if(typeof window.view==='function')window.view();});
-   strip.appendChild(b);
+  Array.from(strip.querySelectorAll('button')).forEach((b,i)=>{
+   const name=i===0?'':names[i-1];
+   b.setAttribute('aria-pressed',String(selected===name));
   });
  }
  function normUrl(v){try{return new URL(v,location.href).href.split('?')[0]}catch(_){return String(v||'').split('?')[0]}}
