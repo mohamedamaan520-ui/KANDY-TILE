@@ -1925,3 +1925,99 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
  new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* Latest user-approved banner-only design: black/gold marble with bathroom photo. */
+(function latestBlackGoldBathroomBannerOnly(){
+ if(window.__kandyLatestBlackGoldBathroomBannerV1)return;
+ window.__kandyLatestBlackGoldBathroomBannerV1=true;
+ function apply(){
+  const hero=document.querySelector('.kandy-public-colour-hero');
+  if(!hero)return;
+  if(!document.getElementById('kandy-latest-black-gold-bathroom-banner-style')){
+   const st=document.createElement('style');st.id='kandy-latest-black-gold-bathroom-banner-style';
+   st.textContent=`
+    .kandy-public-colour-hero{
+     position:relative!important;isolation:isolate!important;overflow:hidden!important;
+     min-height:220px!important;padding:26px 20px 22px!important;
+     color:#fff!important;border:0!important;border-radius:0 0 16px 16px!important;
+     box-shadow:none!important;
+     background:
+      linear-gradient(90deg,#000 0%,rgba(0,0,0,.97) 36%,rgba(0,0,0,.72) 57%,rgba(0,0,0,.18) 100%),
+      radial-gradient(circle at 75% 20%,rgba(212,175,55,.45),transparent 45%),
+      radial-gradient(circle at 65% 90%,rgba(212,175,55,.35),transparent 40%),
+      radial-gradient(circle at 90% 60%,rgba(255,255,255,.06),transparent 40%),
+      linear-gradient(135deg,#000 0%,#111 40%,#1a1505 70%,#000 100%)!important;
+     background-color:#000!important;
+    }
+    .kandy-public-colour-hero:before{
+     content:""!important;position:absolute!important;inset:0!important;
+     z-index:0!important;pointer-events:none!important;height:auto!important;
+     left:0!important;right:0!important;top:0!important;bottom:0!important;
+     transform:none!important;filter:none!important;border:0!important;
+     background:
+      radial-gradient(ellipse 300px 120px at 70% 30%,transparent 60%,rgba(212,175,55,.35) 61%,transparent 62%),
+      radial-gradient(ellipse 400px 160px at 75% 70%,transparent 60%,rgba(255,215,0,.25) 61%,transparent 62%),
+      radial-gradient(ellipse 250px 100px at 60% 50%,transparent 60%,rgba(212,175,55,.2) 61%,transparent 62%)!important;
+    }
+    .kandy-public-colour-hero:after{
+     content:""!important;display:block!important;position:absolute!important;
+     z-index:0!important;pointer-events:none!important;
+     top:0!important;right:0!important;bottom:0!important;left:auto!important;
+     width:44%!important;height:auto!important;transform:none!important;
+     background:
+      linear-gradient(90deg,#000 0%,rgba(0,0,0,.35) 38%,transparent 72%),
+      url("https://images.unsplash.com/photo-1620626011761-996317b8d101?w=800&q=80") center/cover no-repeat!important;
+     opacity:.9!important;filter:none!important;box-shadow:none!important;border:0!important;
+    }
+    .kandy-public-colour-hero>*{position:relative;z-index:2}
+    .kandy-public-colour-hero h1{
+     font-family:Georgia,serif!important;font-size:clamp(28px,6vw,36px)!important;
+     line-height:1.05!important;margin:8px 0 10px!important;font-weight:700!important;
+     letter-spacing:0!important;
+     background:linear-gradient(90deg,#f9e79f,#d4af37,#fff2a8,#b7950b)!important;
+     -webkit-background-clip:text!important;background-clip:text!important;
+     -webkit-text-fill-color:transparent!important;filter:none!important;text-shadow:none!important;
+    }
+    .kandy-public-colour-hero small{
+     color:#d4af37!important;letter-spacing:2.5px!important;font-size:10px!important;font-weight:700!important;
+    }
+    .kandy-public-colour-hero p{
+     font-size:12.5px!important;line-height:1.55!important;color:#e5e5e5!important;
+     max-width:62%!important;text-shadow:none!important;
+    }
+    .kandy-public-colour-hero a[href^="tel:"],
+    .kandy-public-colour-hero a[href*="wa.me"],
+    .kandy-public-colour-hero a[href*="whatsapp"]{
+     display:inline-flex!important;align-items:center!important;gap:6px!important;
+     text-decoration:none!important;padding:10px 14px!important;border-radius:999px!important;
+     font-size:12px!important;font-weight:700!important;letter-spacing:0!important;
+     border:0!important;box-shadow:none!important;
+    }
+    .kandy-public-colour-hero a[href^="tel:"]{background:#fff!important;color:#111!important}
+    .kandy-public-colour-hero a[href*="wa.me"],
+    .kandy-public-colour-hero a[href*="whatsapp"]{background:#00c853!important;color:#fff!important}
+    .kandy-public-colour-hero .tag,
+    .kandy-public-colour-hero [class*="tag"]{
+     background:rgba(255,255,255,.12)!important;
+     border:1px solid rgba(255,255,255,.25)!important;
+     backdrop-filter:blur(6px)!important;
+     padding:6px 10px!important;border-radius:999px!important;font-size:11px!important;
+    }
+    .kandy-public-colour-hero .tag.green,
+    .kandy-public-colour-hero [class*="tag"].green{
+     background:rgba(0,200,83,.35)!important;border-color:rgba(0,200,83,.6)!important;
+    }
+    @media(max-width:480px){
+     .kandy-public-colour-hero{padding:24px 16px 20px!important}
+     .kandy-public-colour-hero:after{width:38%!important;opacity:.7!important}
+     .kandy-public-colour-hero p{max-width:68%!important}
+     .kandy-public-colour-hero h1{font-size:28px!important}
+    }
+   `;
+   document.head.appendChild(st);
+  }
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+ new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
+})();
