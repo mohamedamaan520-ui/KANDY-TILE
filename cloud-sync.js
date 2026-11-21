@@ -1841,3 +1841,87 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
  new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* Apply the supplied black-marble and gold design to the public banner only. */
+(function suppliedBlackMarbleGoldBanner(){
+ if(window.__kandySuppliedBlackMarbleGoldBannerV1)return;
+ window.__kandySuppliedBlackMarbleGoldBannerV1=true;
+ function apply(){
+  const hero=document.querySelector('.kandy-public-colour-hero');
+  if(!hero)return;
+  if(!document.getElementById('kandy-supplied-black-marble-gold-style')){
+   const st=document.createElement('style');st.id='kandy-supplied-black-marble-gold-style';
+   st.textContent=`
+    .kandy-public-colour-hero{
+     position:relative!important;isolation:isolate!important;overflow:hidden!important;
+     padding:28px 22px 24px!important;
+     color:#fff!important;
+     background:
+      radial-gradient(circle at 85% 20%,rgba(212,175,55,.25),transparent 40%),
+      radial-gradient(circle at 10% 90%,rgba(255,255,255,.08),transparent 40%),
+      linear-gradient(135deg,#0a0a0a 0%,#1a1a1a 45%,#000 100%)!important;
+     border:1.5px solid #d4af37!important;
+     border-radius:0 0 22px 22px!important;
+     box-shadow:none!important;
+    }
+    .kandy-public-colour-hero:before{
+     content:""!important;position:absolute!important;inset:0!important;z-index:0!important;
+     height:auto!important;left:0!important;right:0!important;top:0!important;bottom:0!important;
+     transform:none!important;pointer-events:none!important;
+     background:repeating-linear-gradient(115deg,transparent 0 80px,rgba(255,255,255,.03) 80px 81px)!important;
+     border:0!important;filter:none!important;
+    }
+    .kandy-public-colour-hero:after{display:none!important}
+    .kandy-public-colour-hero>*{position:relative;z-index:1}
+    .kandy-public-colour-hero small{
+     color:#d4af37!important;letter-spacing:2px!important;font-size:11px!important;font-weight:700!important;
+    }
+    .kandy-public-colour-hero h1{
+     font-size:clamp(30px,7vw,38px)!important;line-height:1.05!important;margin:10px 0 8px!important;
+     letter-spacing:0!important;font-weight:900!important;
+     background:linear-gradient(90deg,#fff3a3,#d4af37,#fff,#c9a227)!important;
+     -webkit-background-clip:text!important;background-clip:text!important;
+     -webkit-text-fill-color:transparent!important;
+     filter:none!important;text-shadow:none!important;
+    }
+    .kandy-public-colour-hero p{
+     color:#ddd!important;font-size:14px!important;line-height:1.5!important;
+     max-width:320px!important;text-shadow:none!important;
+    }
+    .kandy-public-colour-hero a[href^="tel:"],
+    .kandy-public-colour-hero a[href*="wa.me"],
+    .kandy-public-colour-hero a[href*="whatsapp"]{
+     display:inline-flex!important;align-items:center!important;gap:6px!important;
+     border:0!important;border-radius:999px!important;padding:11px 16px!important;
+     font-size:13px!important;font-weight:700!important;letter-spacing:0!important;
+     box-shadow:none!important;text-decoration:none!important;
+    }
+    .kandy-public-colour-hero a[href^="tel:"]{background:#00c853!important;color:#fff!important}
+    .kandy-public-colour-hero a[href*="wa.me"],
+    .kandy-public-colour-hero a[href*="whatsapp"]{background:#fff!important;color:#111!important}
+    .kandy-public-colour-hero .tags,
+    .kandy-public-colour-hero .hero-tags,
+    .kandy-public-colour-hero [class*="tag-list"]{
+     display:flex!important;gap:8px!important;margin-top:16px!important;flex-wrap:wrap!important;
+    }
+    .kandy-public-colour-hero .tag,
+    .kandy-public-colour-hero [class*="hero-tag"]{
+     background:rgba(255,255,255,.12)!important;
+     border:1px solid rgba(255,255,255,.25)!important;
+     padding:6px 11px!important;border-radius:999px!important;
+     font-size:11px!important;color:#fff!important;backdrop-filter:blur(5px)!important;
+    }
+    .kandy-public-colour-hero .tag b,
+    .kandy-public-colour-hero [class*="hero-tag"] b{color:#ffd700!important}
+    @media(max-width:600px){
+     .kandy-public-colour-hero{padding:24px 17px 21px!important}
+     .kandy-public-colour-hero h1{font-size:clamp(29px,9vw,36px)!important}
+    }
+   `;
+   document.head.appendChild(st);
+  }
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+ new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
+})();
