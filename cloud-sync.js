@@ -7,7 +7,8 @@
   const BUCKET = 'catalog-photos';
   const client = window.supabase.createClient(URL, KEY);
   let isCloudAdmin = false, syncBusy = false, syncAgain = false, realtime = null;
-  let catalogCategories = [];
+  let catalogCategories = window.kandyCatalogCategories || [];
+  Object.defineProperty(window, 'kandyCatalogCategories', { configurable: true, get: () => catalogCategories, set: value => { catalogCategories = Array.isArray(value) ? value : []; } });
   const $ = id => document.getElementById(id);
   const msg = value => { const el = $('login-message'); if (el) el.textContent = value; };
   const friendly = e => e?.message || String(e || 'Unknown error');
@@ -2064,111 +2065,129 @@
 })();
 
 
-/* Customer catalogue navigation: Category -> Folders -> Items.
-   Admin screens, catalogue records, images and Supabase data are untouched. */
-(function kandyCustomerCategoryFolderFlowOnly(){
- if(window.__kandyCustomerCategoryFolderFlowV1)return;
- window.__kandyCustomerCategoryFolderFlowV1=true;
- const originalView=window.view;
- if(typeof originalView!=='function')return;
- let stage='categories';
- let nav=null;
- const $id=id=>document.getElementById(id);
- function makeButton(label,cls,handler){
-  const b=document.createElement('button');
-  b.type='button';b.className=cls;b.textContent=label;b.addEventListener('click',handler);
-  return b;
+
+/* KANDY TILE requested category manager, category -> folder navigation,
+   and mixed 10-design customer slideshow. Existing tile records/images remain intact. */
+(function kandyCategoryAndFeaturedUpgrade(){
+ if(window.__kandyCategoryAndFeaturedV2)return;
+ window.__kandyCategoryAndFeaturedV2=true;
+ const $=id=>document.getElementById(id);
+ const rows=()=>window.kandyCatalogCategories||[];
+ const allCategories=()=>{
+  const found=[...new Set(rows().map(x=>x.collection).filter(Boolean))];
+  if(found.length)return found;
+  const fromTiles=[...new Set((Array.isArray(tiles)?tiles:[]).map(t=>t.category||'Tiles'))];
+  return fromTiles.length?fromTiles:['Tiles'];
+ };
+ const categoryFolders=cat=>{
+  const found=[...new Set(rows().filter(x=>x.collection===cat&&x.name&&x.name!=='__category__').map(x=>x.name))];
+  if(found.length)return found;
+  if(cat==='Tiles')return Array.isArray(folders)?folders.slice():[];
+  return [];
+ };
+ const saveNow=()=>{try{if(typeof save==='function')save()}catch(e){console.error(e)}};
+ const ensureRows=()=>{
+  if(!rows().length)(Array.isArray(folders)?folders:[]).forEach(f=>rows().push({collection:'Tiles',name:f}));
+  (Array.isArray(tiles)?tiles:[]).forEach(t=>{
+   if(!t.category)t.category='Tiles';
+   if(!allCategories().includes(t.category))rows().push({collection:t.category,name:'__category__'});
+   if(t.folder&&!rows().some(x=>x.collection===t.category&&x.name===t.folder))rows().push({collection:t.category,name:t.folder});
+  });
+ };
+ ensureRows();
+ let selectedCategory=null,selectedFolder=null,stage='categories',featuredTimer=null;
+ function button(text,cls,fn){const b=document.createElement('button');b.type='button';b.className=cls;b.textContent=text;b.addEventListener('click',fn);return b}
+ function navRoot(){
+  const main=document.querySelector('#public main');if(!main)return null;
+  let el=$('kandy-category-nav-v2');
+  if(!el){el=document.createElement('div');el.id='kandy-category-nav-v2';el.style.cssText='display:flex;gap:9px;flex-wrap:wrap;margin:0 0 14px';main.insertBefore(el,main.firstChild)}
+  return el;
  }
- function ensureNav(){
-  if(nav&&nav.isConnected)return nav;
-  const foldersBox=$id('folders');
-  if(!foldersBox)return null;
-  nav=document.createElement('div');
-  nav.id='kandy-customer-category-nav';
-  nav.style.cssText='display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:0 0 16px';
-  foldersBox.parentNode.insertBefore(nav,foldersBox);
-  return nav;
+ function featuredRoot(){
+  const main=document.querySelector('#public main');if(!main)return null;
+  let el=$('kandy-featured-v2');
+  if(!el){el=document.createElement('section');el.id='kandy-featured-v2';el.style.cssText='margin:8px 0 24px';const label=document.createElement('div');label.textContent='Featured tile designs';label.style.cssText='font-size:14px;color:#6e747b;font-weight:700;margin-bottom:10px';const grid=document.createElement('div');grid.id='kandy-featured-grid-v2';grid.style.cssText='display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px';el.append(label,grid);const nav=navRoot();if(nav&&nav.nextSibling)main.insertBefore(el,nav.nextSibling);else main.insertBefore(el,main.firstChild)}
+  return $('kandy-featured-grid-v2');
  }
- function setVisible(id,visible){
-  const el=$id(id);if(el)el.style.display=visible?'':'none';
+ function renderFeatured(){
+  const root=featuredRoot();if(!root||!Array.isArray(tiles))return;
+  const pool=tiles.filter(t=>t&&t.image);for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
+  root.replaceChildren();pool.slice(0,10).forEach(t=>{
+   const card=button('', 'kandy-featured-card-v2',()=>{if(typeof openTile==='function')openTile(t.id)});
+   const img=document.createElement('img');img.src=t.image;img.alt='Tile '+(t.number||'');img.loading='lazy';
+   const caption=document.createElement('div');caption.textContent=(t.number||'')+' · '+(t.folder||'');
+   card.append(img,caption);root.append(card);
+  });
  }
- function renderFlow(){
-  const foldersBox=$id('folders');
-  const toolbar=document.querySelector('main .toolbar');
-  const grid=$id('grid');
-  const empty=$id('empty');
-  const bar=ensureNav();
-  if(!foldersBox||!bar)return;
-  bar.replaceChildren();
+ function renderCustomerFlow(){
+  const nav=navRoot(),folderBox=$('folders'),toolbar=document.querySelector('#public main .toolbar'),grid=$('grid'),empty=$('empty');
+  if(!nav||!folderBox)return;
+  nav.replaceChildren();
+  const cats=allCategories();
   if(stage==='categories'){
-   bar.appendChild(makeButton('Tiles','kandy-category-card',()=>{
-    stage='folders';renderFlow();
-   }));
-   foldersBox.style.display='none';
-   if(toolbar)toolbar.style.display='none';
-   if(grid)grid.style.display='none';
-   if(empty)empty.style.display='none';
+   cats.forEach(cat=>nav.append(button(cat,'kandy-category-v2',()=>{selectedCategory=cat;selectedFolder=null;stage='folders';renderCustomerFlow()})));
+   folderBox.style.display='none';if(toolbar)toolbar.style.display='none';if(grid)grid.style.display='none';if(empty)empty.style.display='none';
    return;
   }
+  nav.append(button('‹ Categories','kandy-back-v2',()=>{stage='categories';selectedCategory=null;selectedFolder=null;renderCustomerFlow()}));
+  const title=document.createElement('strong');title.textContent=selectedCategory||'Categories';title.style.cssText='align-self:center;padding:8px 10px';nav.append(title);
   if(stage==='folders'){
-   bar.appendChild(makeButton('‹ Categories','kandy-category-back',()=>{
-    stage='categories';renderFlow();
-   }));
-   const heading=document.createElement('strong');
-   heading.textContent='Tiles';
-   heading.style.cssText='align-self:center;padding:9px 12px;color:#252525';
-   bar.appendChild(heading);
-   foldersBox.replaceChildren();
-   const allCount=Array.isArray(tiles)?tiles.length:0;
-   foldersBox.appendChild(makeButton('All Tile Folder ('+allCount+')','folder',()=>{
-    active='All Collections';stage='items';originalView();renderFlow();
-   }));
-   (Array.isArray(folders)?folders:[]).forEach(folder=>{
-    const count=Array.isArray(tiles)?tiles.filter(t=>t.folder===folder).length:0;
-    foldersBox.appendChild(makeButton(folder+' ('+count+')','folder',()=>{
-     active=folder;stage='items';originalView();renderFlow();
-    }));
+   folderBox.replaceChildren();
+   categoryFolders(selectedCategory).forEach(folder=>{
+    const count=tiles.filter(t=>(t.category||'Tiles')===selectedCategory&&t.folder===folder).length;
+    folderBox.append(button(folder+' ('+count+')','folder',()=>{selectedFolder=folder;stage='items';if(typeof view==='function')view();renderCustomerFlow()}));
    });
-   foldersBox.style.display='flex';
-   if(toolbar)toolbar.style.display='none';
-   if(grid)grid.style.display='none';
-   if(empty)empty.style.display='none';
-   return;
+   folderBox.style.display='flex';if(toolbar)toolbar.style.display='none';if(grid)grid.style.display='none';if(empty)empty.style.display='none';return;
   }
-  bar.appendChild(makeButton('‹ Categories','kandy-category-back',()=>{
-   stage='categories';active='All Collections';originalView();renderFlow();
-  }));
-  bar.appendChild(makeButton('‹ All folders','kandy-category-back',()=>{
-   stage='folders';originalView();renderFlow();
-  }));
-  const heading=document.createElement('strong');
-  heading.textContent=active==='All Collections'?'All Tile Items':String(active);
-  heading.style.cssText='align-self:center;padding:9px 12px;color:#252525';
-  bar.appendChild(heading);
-  foldersBox.style.display='none';
-  if(toolbar)toolbar.style.display='';
-  if(grid)grid.style.display='';
-  if(empty)empty.style.display='';
-  const title=$id('collection-title');
-  if(title)title.textContent=active==='All Collections'?'All Tile Items':String(active);
+  nav.append(button('‹ Folders','kandy-back-v2',()=>{stage='folders';selectedFolder=null;renderCustomerFlow()}));
+  folderBox.style.display='none';if(toolbar)toolbar.style.display='';if(grid)grid.style.display='';if(empty)empty.style.display='';
+  const titleEl=$('collection-title');if(titleEl)titleEl.textContent=selectedCategory+' / '+selectedFolder;
  }
- const css=document.createElement('style');
- css.id='kandy-customer-category-folder-flow-style';
- css.textContent=`
-  #kandy-customer-category-nav .kandy-category-card{
-   min-width:150px;padding:16px 22px;border:1px solid #c11224;border-radius:14px;
-   background:#c11224;color:#fff;font-weight:850;font-size:17px;text-align:left;
-   box-shadow:0 5px 16px rgba(193,18,36,.14)
-  }
-  #kandy-customer-category-nav .kandy-category-back{
-   padding:10px 14px;border:1px solid #ddd;border-radius:11px;background:#fff;
-   color:#252525;font-weight:750
-  }
-  #folders .folder{display:inline-flex;align-items:center;justify-content:center}
+ const style=document.createElement('style');style.id='kandy-category-featured-style-v2';style.textContent=`
+ #kandy-category-nav-v2 .kandy-category-v2{padding:12px 18px;border:1px solid #c11224;border-radius:12px;background:#fff;color:#15171a;font-weight:800}
+ #kandy-category-nav-v2 .kandy-back-v2{padding:10px 14px;border:1px solid #ddd;border-radius:10px;background:#fff;font-weight:750}
+ #kandy-featured-grid-v2 .kandy-featured-card-v2{padding:0;border:1px solid #e8e8ea;border-radius:13px;overflow:hidden;background:#fff;text-align:left;min-width:0}
+ #kandy-featured-grid-v2 img{display:block;width:100%;aspect-ratio:1;object-fit:cover}
+ #kandy-featured-grid-v2 div{padding:8px 9px;font-size:12px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ @media(max-width:520px){#kandy-featured-grid-v2{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}}
+ #kandy-category-admin-v2 .admin-row{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0}
+ #kandy-category-admin-v2 input,#kandy-category-admin-v2 select{padding:11px;border:1px solid #ccc;border-radius:9px}
+ #kandy-category-admin-v2 .cat-row{border:1px solid #eee;border-radius:10px;padding:10px;margin:7px 0}
+ #kandy-category-admin-v2 button{padding:8px 11px;border:1px solid #ddd;border-radius:8px;background:#fff;margin:3px}
  `;
- document.head.appendChild(css);
- window.view=function(){originalView();renderFlow();};
- if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded',renderFlow,{once:true});
- }else renderFlow();
+ document.head.append(style);
+ function buildAdmin(){
+  const dash=$('dashboard');if(!dash||!dash.isConnected)return;
+  let panel=$('kandy-category-admin-v2');
+  if(!panel){panel=document.createElement('div');panel.id='kandy-category-admin-v2';panel.className='admin-panel';panel.innerHTML='<h3>Manage categories and folders</h3><div class="admin-row"><input id="kandy-new-category-v2" placeholder="New category name"><button type="button" class="primary" id="kandy-add-category-v2">Add category</button></div><div id="kandy-category-list-v2"></div><hr><div class="admin-row"><select id="kandy-folder-category-v2"></select><input id="kandy-new-folder-v2" placeholder="New folder name"><button type="button" class="primary" id="kandy-add-folder-v2">Add folder</button></div><div id="kandy-folder-list-v2"></div><p class="notice">Category and folder changes are saved to the shared catalogue.</p>';const first=dash.querySelector('.admin-panel');if(first)first.after(panel);else dash.prepend(panel);
+   $('kandy-add-category-v2').onclick=()=>{const name=$('kandy-new-category-v2').value.trim();if(!name)return;if(allCategories().some(x=>x.toLowerCase()===name.toLowerCase()))return alert('Category already exists.');rows().push({collection:name,name:'__category__'});$('kandy-new-category-v2').value='';saveNow();buildAdmin()};
+   $('kandy-add-folder-v2').onclick=()=>{const name=$('kandy-new-folder-v2').value.trim(),cat=$('kandy-folder-category-v2').value;if(!name||!cat)return;if(folders.includes(name))return alert('Folder name already exists.');folders.push(name);rows().push({collection:cat,name});$('kandy-new-folder-v2').value='';saveNow();buildAdmin()};
+  }
+  const sel=$('kandy-folder-category-v2');if(sel){const old=sel.value;sel.innerHTML=allCategories().map(c=>'<option>'+String(c).replace(/[&<>"]/g,'')+'</option>').join('');if(allCategories().includes(old))sel.value=old}
+  const catList=$('kandy-category-list-v2');if(catList){catList.replaceChildren();allCategories().forEach(cat=>{const row=document.createElement('div');row.className='cat-row';const name=document.createElement('strong');name.textContent=cat+' ('+tiles.filter(t=>(t.category||'Tiles')===cat).length+' designs)';const edit=button('Edit','',()=>{const next=prompt('Edit category name:',cat)?.trim();if(!next||next===cat)return;if(allCategories().some(x=>x.toLowerCase()===next.toLowerCase()))return alert('Category already exists.');rows().forEach(x=>{if(x.collection===cat)x.collection=next});tiles.forEach(t=>{if((t.category||'Tiles')===cat)t.category=next});if(selectedCategory===cat)selectedCategory=next;saveNow();buildAdmin();renderCustomerFlow()});const del=button('Delete','',()=>{if(tiles.some(t=>(t.category||'Tiles')===cat))return alert('This category still has designs. Move or delete those designs first.');if(!confirm('Delete category '+cat+'?'))return;const oldFolders=categoryFolders(cat);window.kandyCatalogCategories=rows().filter(x=>x.collection!==cat);folders=folders.filter(f=>!oldFolders.includes(f));saveNow();buildAdmin()});row.append(name,edit,del);catList.append(row)})}
+  const folderList=$('kandy-folder-list-v2');if(folderList){folderList.replaceChildren();allCategories().forEach(cat=>{const head=document.createElement('strong');head.textContent=cat;folderList.append(head);categoryFolders(cat).forEach(folder=>{const row=document.createElement('div');row.className='cat-row';const label=document.createElement('span');label.textContent=folder+' ('+tiles.filter(t=>(t.category||'Tiles')===cat&&t.folder===folder).length+')';const edit=button('Edit','',()=>{const next=prompt('Edit folder name:',folder)?.trim();if(!next||next===folder)return;if(folders.includes(next))return alert('Folder name already exists.');rows().forEach(x=>{if(x.collection===cat&&x.name===folder)x.name=next});tiles.forEach(t=>{if((t.category||'Tiles')===cat&&t.folder===folder)t.folder=next});folders=folders.map(f=>f===folder?next:f);saveNow();buildAdmin();renderCustomerFlow()});const del=button('Delete','',()=>{if(tiles.some(t=>(t.category||'Tiles')===cat&&t.folder===folder))return alert('This folder still contains designs. Move or delete them first.');if(!confirm('Delete empty folder '+folder+'?'))return;window.kandyCatalogCategories=rows().filter(x=>!(x.collection===cat&&x.name===folder));folders=folders.filter(f=>f!==folder);saveNow();buildAdmin()});row.append(label,edit,del);folderList.append(row)})})}
+ }
+ const oldRender=window.renderAdmin;
+ if(typeof oldRender==='function')window.renderAdmin=function(){oldRender();buildAdmin()};
+ const form=$('tile-form');
+ if(form&&typeof form.onsubmit==='function'){
+  const oldSubmit=form.onsubmit;
+  form.onsubmit=async function(e){const previousCount=tiles.length;const wasEditing=typeof editing!=='undefined'&&!!editing;const chosen=$('kandy-tile-category-v2')?.value||$('edit-category')?.value||'Tiles';const result=await oldSubmit.call(this,e);if(tiles.length>previousCount){tiles[tiles.length-1].category=chosen;saveNow()}else if(wasEditing){const t=tiles.find(x=>x.id===editing);if(t)t.category=chosen;saveNow()}return result};
+ }
+ function attachAdminCategoryField(){
+  const folder=$('edit-folder');if(!folder||$('kandy-tile-category-v2'))return;
+  const row=folder.parentElement;const cat=document.createElement('select');cat.id='kandy-tile-category-v2';cat.setAttribute('aria-label','Tile category');cat.style.cssText='padding:12px;border:1px solid #ccc;border-radius:10px';
+  cat.innerHTML=allCategories().map(c=>'<option>'+String(c).replace(/[&<>"]/g,'')+'</option>').join('');
+  row.insertBefore(cat,folder);
+  cat.addEventListener('change',()=>{const available=categoryFolders(cat.value);folder.innerHTML=available.map(f=>'<option>'+String(f).replace(/[&<>"]/g,'')+'</option>').join('')});
+  const oldEdit=window.renderAdminTiles;
+  if(typeof oldEdit==='function'&&!window.__kandyTileCategoryEditWrapped){window.__kandyTileCategoryEditWrapped=true;window.renderAdminTiles=function(){oldEdit();document.querySelectorAll('#admin-list .admin-item button').forEach(btn=>{if(btn.textContent==='Edit'&& !btn.dataset.categoryWrapped){btn.dataset.categoryWrapped='1';btn.addEventListener('click',()=>setTimeout(()=>{const item=tiles.find(t=>t.id===editing);if(item){cat.value=item.category||'Tiles';const fs=categoryFolders(cat.value);folder.innerHTML=fs.map(f=>'<option>'+String(f).replace(/[&<>"]/g,'')+'</option>').join('');folder.value=item.folder}},0))}})}}
+ }
+ const oldView=window.view;
+ if(typeof oldView==='function')window.view=function(){oldView();renderCustomerFlow()};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{ensureRows();renderFeatured();renderCustomerFlow();buildAdmin();attachAdminCategoryField()},{once:true});
+ else{ensureRows();renderFeatured();renderCustomerFlow();buildAdmin();attachAdminCategoryField()}
+ if(featuredTimer)clearInterval(featuredTimer);featuredTimer=setInterval(renderFeatured,120000);
+ const observer=new MutationObserver(()=>{buildAdmin();attachAdminCategoryField()});
+ observer.observe(document.documentElement,{childList:true,subtree:true});
 })();
