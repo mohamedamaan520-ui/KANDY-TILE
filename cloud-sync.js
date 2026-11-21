@@ -1703,3 +1703,32 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
  new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* Final requested banner palette: black + gold + red only. */
+(function finalBlackGoldRedBannerOnly(){
+ if(window.__kandyBlackGoldRedBannerV1)return;
+ window.__kandyBlackGoldRedBannerV1=true;
+ function apply(){
+  if(document.getElementById('kandy-black-gold-red-banner-style'))return;
+  const st=document.createElement('style');st.id='kandy-black-gold-red-banner-style';
+  st.textContent=`
+   .kandy-public-colour-hero{
+    color:#fff4df!important;
+    background:radial-gradient(ellipse at 82% 18%,rgba(190,24,42,.24),transparent 32%),radial-gradient(ellipse at 12% 88%,rgba(220,177,82,.17),transparent 36%),linear-gradient(125deg,rgba(190,24,42,.10),transparent 42%,rgba(218,174,75,.08)),linear-gradient(135deg,#050505 0%,#17120e 52%,#080808 100%)!important;
+    border:1px solid rgba(221,181,91,.82)!important;
+    box-shadow:0 20px 48px rgba(0,0,0,.42),0 0 25px rgba(191,25,43,.12),inset 0 1px 0 rgba(255,235,184,.18)!important;
+   }
+   .kandy-public-colour-hero:before{border:1px solid rgba(221,181,91,.28)!important;background:linear-gradient(135deg,transparent 0 47%,rgba(193,25,43,.09) 48%,transparent 51%)!important}
+   .kandy-public-colour-hero:after{background:linear-gradient(90deg,transparent,#a77c31 16%,#f5dfa4 42%,#c21f35 58%,#e8c56f 82%,transparent)!important;box-shadow:0 0 17px rgba(225,182,83,.42)!important}
+   .kandy-public-colour-hero h1{color:#f3d78f!important;background:linear-gradient(100deg,#fff2c9 0%,#e4bd65 48%,#fff0bd 72%,#c51e35 100%)!important;-webkit-background-clip:text!important;background-clip:text!important;-webkit-text-fill-color:transparent!important;text-shadow:0 5px 24px rgba(218,177,83,.16)!important}
+   .kandy-public-colour-hero h2,.kandy-public-colour-hero h3{color:#f0d28b!important;-webkit-text-fill-color:#f0d28b!important;background:linear-gradient(110deg,rgba(5,5,5,.96),rgba(42,23,19,.95),rgba(8,8,8,.96))!important;border:1px solid rgba(197,30,53,.52)!important;box-shadow:inset 0 1px 0 rgba(255,225,169,.12),0 6px 16px rgba(0,0,0,.28)!important}
+   .kandy-public-colour-hero p{color:rgba(255,245,225,.9)!important}
+   .kandy-public-colour-hero img{background:#090909!important;border:2px solid rgba(220,179,88,.78)!important;outline:1px solid rgba(190,25,43,.48)!important;border-radius:14px!important;box-shadow:0 15px 32px rgba(0,0,0,.46),0 0 0 4px rgba(198,28,48,.08)!important}
+   .kandy-public-colour-hero a[href^="tel:"],.kandy-public-colour-hero a[href*="wa.me"],.kandy-public-colour-hero a[href*="whatsapp"]{background:linear-gradient(130deg,#f0d58f 0%,#bd913e 48%,#c51e35 100%)!important;color:#120d08!important;border:1px solid #f3dfa9!important;box-shadow:0 9px 22px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.38)!important}
+  `;
+  document.head.appendChild(st);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+ new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
+})();
