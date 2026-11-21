@@ -2135,11 +2135,11 @@
    folderBox.replaceChildren();
    categoryFolders(selectedCategory).forEach(folder=>{
     const count=tiles.filter(t=>(t.category||'Tiles')===selectedCategory&&t.folder===folder).length;
-    folderBox.append(button(folder+' ('+count+')','folder',()=>{selectedFolder=folder;stage='items';if(typeof view==='function')view();renderCustomerFlow()}));
+    folderBox.append(button(folder+' ('+count+')','folder',()=>{selectedFolder=folder;active=folder;stage='items';if(typeof view==='function')view();renderCustomerFlow()}));
    });
    folderBox.style.display='flex';if(toolbar)toolbar.style.display='none';if(grid)grid.style.display='none';if(empty)empty.style.display='none';return;
   }
-  nav.append(button('‹ Folders','kandy-back-v2',()=>{stage='folders';selectedFolder=null;renderCustomerFlow()}));
+  nav.append(button('‹ Folders','kandy-back-v2',()=>{stage='folders';selectedFolder=null;active='All Collections';if(typeof view==='function')view();renderCustomerFlow()}));
   folderBox.style.display='none';if(toolbar)toolbar.style.display='';if(grid)grid.style.display='';if(empty)empty.style.display='';
   const titleEl=$('collection-title');if(titleEl)titleEl.textContent=selectedCategory+' / '+selectedFolder;
  }
@@ -2172,7 +2172,7 @@
  const form=$('tile-form');
  if(form&&typeof form.onsubmit==='function'){
   const oldSubmit=form.onsubmit;
-  form.onsubmit=async function(e){const previousCount=tiles.length;const wasEditing=typeof editing!=='undefined'&&!!editing;const chosen=$('kandy-tile-category-v2')?.value||$('edit-category')?.value||'Tiles';const result=await oldSubmit.call(this,e);if(tiles.length>previousCount){tiles[tiles.length-1].category=chosen;saveNow()}else if(wasEditing){const t=tiles.find(x=>x.id===editing);if(t)t.category=chosen;saveNow()}return result};
+  form.onsubmit=async function(e){const previousCount=tiles.length;const editingId=typeof editing!=='undefined'?editing:null;const chosen=$('kandy-tile-category-v2')?.value||$('edit-category')?.value||'Tiles';const result=await oldSubmit.call(this,e);if(tiles.length>previousCount){tiles[tiles.length-1].category=chosen;saveNow()}else if(editingId){const t=tiles.find(x=>x.id===editingId);if(t)t.category=chosen;saveNow()}return result};
  }
  function attachAdminCategoryField(){
   const folder=$('edit-folder');if(!folder||$('kandy-tile-category-v2'))return;
