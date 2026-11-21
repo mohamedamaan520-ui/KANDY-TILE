@@ -2100,7 +2100,7 @@
    card.style.display=visible?'':'none';
   });
   const folders=document.getElementById('folders');
-  if(folders)folders.style.display=showingAll?'':'none';
+  if(folders)folders.style.display='';
  }
  window.view=function(){
   const result=originalView.apply(this,arguments);
