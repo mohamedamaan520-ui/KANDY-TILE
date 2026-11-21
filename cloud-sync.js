@@ -2064,83 +2064,97 @@
  new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
 })();
 
-/* KANDY TILE customer catalogue: show every folder; folder-only designs.
-   Display-only patch: does not modify Supabase records or photo storage. */
-(function kandyCustomerFoldersOnlyV2(){
- if(window.__kandyCustomerFoldersOnlyV2)return;
- window.__kandyCustomerFoldersOnlyV2=true;
+/* KANDY TILE customer view: folders first, no category tabs or featured 10-photo strip.
+   Display-only; preserves all catalogue rows and storage objects. */
+(function kandyFoldersFirstCustomerViewV3(){
+ if(window.__kandyFoldersFirstCustomerViewV3)return;
+ window.__kandyFoldersFirstCustomerViewV3=true;
  const originalView=window.view;
  if(typeof originalView!=='function')return;
  const style=document.createElement('style');
- style.id='kandy-customer-folders-only-v2-style';
- style.textContent=`
+ style.id='kandy-folders-first-v3-style';
+ style.textContent=\`
   #kandy-customer-folder-strip{display:flex!important;flex-wrap:wrap!important;gap:10px!important;
-   align-items:center!important;justify-content:center!important;width:100%!important;
-   margin:16px auto 20px!important;padding:8px!important;box-sizing:border-box!important}
+   align-items:center!important;justify-content:flex-start!important;width:100%!important;
+   margin:16px auto 20px!important;padding:8px 12px!important;box-sizing:border-box!important}
   #kandy-customer-folder-strip button{cursor:pointer!important;border:1px solid #c6a45a!important;
    background:#111!important;color:#f3d88b!important;border-radius:12px!important;
-   padding:11px 15px!important;font-weight:700!important}
+   padding:12px 16px!important;font-weight:700!important}
   #kandy-customer-folder-strip button[aria-pressed="true"]{background:#c6a45a!important;color:#111!important}
- `;
+  #kandy-customer-folder-strip .kandy-folder-back{background:#fff!important;color:#222!important;border-color:#ddd!important}
+ \`;
  document.head.appendChild(style);
+ const gridElement=()=>document.getElementById('grid')||document.querySelector('.tile-grid,.product-grid,[id*="grid"]');
+ const clean=v=>String(v||'').trim();
  function folderNames(){
-  return Array.isArray(window.folders)?[...new Set(window.folders.filter(x=>typeof x==='string'&&x.trim()))]:[];
+  const values=[];
+  if(Array.isArray(window.folders))window.folders.forEach(x=>{if(typeof x==='string'&&clean(x))values.push(clean(x));});
+  if(Array.isArray(window.tiles))window.tiles.forEach(x=>{if(x&&clean(x.folder))values.push(clean(x.folder));});
+  return [...new Set(values)];
  }
- function gridElement(){return document.getElementById('grid')||document.querySelector('[id*="grid"],.grid,.tile-grid,.product-grid');}
+ function hideCategoryAndFeatured(){
+  const grid=gridElement();if(!grid)return;
+  document.querySelectorAll('button,[role="tab"],a,label,span,div').forEach(el=>{
+   if(el.children.length>3||clean(el.textContent).toLowerCase()!=='tiles'||el.closest('#kandy-customer-folder-strip'))return;
+   const target=el.closest('button,[role="tab"],a')||el,group=target.parentElement;
+   if(group&&group!==document.body&&group.querySelectorAll('button,[role="tab"]').length>=2)group.style.setProperty('display','none','important');
+   else target.style.setProperty('display','none','important');
+  });
+  const gridTop=grid.getBoundingClientRect().top+window.scrollY,candidates=[];
+  document.querySelectorAll('body *').forEach(el=>{
+   if(el===grid||el.closest('#kandy-customer-folder-strip')||grid.contains(el))return;
+   const imgs=el.querySelectorAll?el.querySelectorAll('img').length:0;
+   if(imgs<8||imgs>12)return;
+   const r=el.getBoundingClientRect(),top=r.top+window.scrollY;
+   if(top>=gridTop||r.width<150||r.height<60)return;
+   candidates.push({el,area:r.width*r.height});
+  });
+  if(candidates.length){
+   candidates.sort((a,b)=>a.area-b.area);
+   candidates[0].el.style.setProperty('display','none','important');
+   candidates[0].el.setAttribute('data-kandy-hidden-feature-strip','true');
+  }
+ }
  function ensureFolderStrip(){
-  const grid=gridElement(), names=folderNames();
-  if(!grid||!names.length)return;
+  const grid=gridElement(),names=folderNames();if(!grid||!names.length)return;
   let strip=document.getElementById('kandy-customer-folder-strip');
   if(!strip){strip=document.createElement('nav');strip.id='kandy-customer-folder-strip';strip.setAttribute('aria-label','Tile folders');grid.parentNode.insertBefore(strip,grid);}
-  const selected=window.active||'All Collections';
   strip.replaceChildren();
+  const selected=clean(window.active);
+  const back=document.createElement('button');back.type='button';back.className='kandy-folder-back';back.textContent='All Folders';
+  back.setAttribute('aria-pressed',String(!selected));
+  back.addEventListener('click',()=>{window.active='';if(typeof window.view==='function')window.view();});
+  strip.appendChild(back);
   names.forEach(name=>{
-   const b=document.createElement('button');b.type='button';b.textContent=name;
-   b.setAttribute('aria-pressed',String(selected===name));
-   b.addEventListener('click',()=>{
-    window.active=name;
-    if(typeof window.view==='function')window.view();
-    requestAnimationFrame(applyFolderFilter);
-   });
+   const b=document.createElement('button');b.type='button';b.textContent=name;b.setAttribute('aria-pressed',String(selected===name));
+   b.addEventListener('click',()=>{window.active=name;if(typeof window.view==='function')window.view();});
    strip.appendChild(b);
   });
  }
  function normUrl(v){try{return new URL(v,location.href).href.split('?')[0]}catch(_){return String(v||'').split('?')[0]}}
  function applyFolderFilter(){
-  const grid=gridElement(), list=window.tiles, names=folderNames();
-  if(!grid||!Array.isArray(list))return;
-  const selected=window.active||'All Collections';
-  const all=selected==='All Collections'||selected==='All'||selected==='';
-  const byUrl=new Map(),byId=new Map();
-  list.forEach(t=>{if(!t)return;if(t.image)byUrl.set(normUrl(t.image),t);if(t.id!=null)byId.set(String(t.id),t)});
+  const grid=gridElement(),list=window.tiles;if(!grid||!Array.isArray(list))return;
+  const selected=clean(window.active),byUrl=new Map(),byId=new Map();
+  list.forEach(t=>{if(!t)return;if(t.image)byUrl.set(normUrl(t.image),t);if(t.id!=null)byId.set(String(t.id),t);});
   Array.from(grid.children).forEach(card=>{
    if(card.id==='kandy-customer-folder-strip')return;
    const img=card.matches('img')?card:card.querySelector('img');
    let tile=img?(byUrl.get(normUrl(img.currentSrc||img.src))||byUrl.get(normUrl(img.getAttribute('src')))):null;
    if(!tile){const id=card.dataset?.id||card.getAttribute('data-id')||card.dataset?.tileId;if(id!=null)tile=byId.get(String(id));}
-   if(!tile&&img){tile=list.find(t=>t&&t.image&&normUrl(t.image)===normUrl(img.getAttribute('src')));}
-   const show=all||(!!tile&&tile.folder===selected);
+   if(!tile&&img)tile=list.find(t=>t&&t.image&&normUrl(t.image)===normUrl(img.getAttribute('src')));
+   const show=!!selected&&!!tile&&clean(tile.folder)===selected;
    card.hidden=!show;card.style.display=show?'':'none';
   });
-  ensureFolderStrip();
  }
- function removeCategoryUi(){
-  const names=/^categories?$/i;
-  document.querySelectorAll('body *').forEach(el=>{
-   if(el.children.length>0)return;
-   const t=(el.textContent||'').trim();
-   if(!names.test(t))return;
-   const target=el.closest('label,button,[role="tab"],.tab,.filter,.category-filter')||el;
-   if(target.id!=='kandy-customer-folder-strip')target.style.display='none';
-  });
- }
+ function refresh(){hideCategoryAndFeatured();ensureFolderStrip();applyFolderFilter();}
  window.view=function(){
   const result=originalView.apply(this,arguments);
-  requestAnimationFrame(()=>{ensureFolderStrip();applyFolderFilter();removeCategoryUi();});
-  setTimeout(()=>{ensureFolderStrip();applyFolderFilter();removeCategoryUi();},120);
-  return result;
+  requestAnimationFrame(refresh);setTimeout(refresh,100);setTimeout(refresh,350);return result;
  };
- const observer=new MutationObserver(()=>{ensureFolderStrip();applyFolderFilter();removeCategoryUi();});
- const start=()=>{const grid=gridElement();if(grid)observer.observe(grid,{childList:true,subtree:true});ensureFolderStrip();applyFolderFilter();removeCategoryUi();};
+ const start=()=>{
+  refresh();
+  const observer=new MutationObserver(()=>refresh());
+  observer.observe(document.body,{childList:true,subtree:true});
+ };
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
