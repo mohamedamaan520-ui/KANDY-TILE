@@ -2063,3 +2063,54 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
  new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+/* KANDY TILE: folder-only catalogue view. No category layer.
+   All designs show in the main catalogue; selecting a folder strictly filters
+   cards to that folder only. This is display-only and never changes stored data. */
+(function kandyStrictFolderOnlyView(){
+ if(window.__kandyStrictFolderOnlyViewV1)return;
+ window.__kandyStrictFolderOnlyViewV1=true;
+ const originalView=window.view;
+ if(typeof originalView!=='function')return;
+ const normalise=value=>{try{return new URL(value,location.href).href.split('?')[0]}catch(_){return String(value||'').split('?')[0]}};
+ function applyFolderFilter(){
+  const grid=document.getElementById('grid');
+  if(!grid||!Array.isArray(window.tiles))return;
+  const selected=window.active||'All Collections';
+  const showingAll=selected==='All Collections'||selected==='All'||selected==='';
+  const lookup=new Map();
+  window.tiles.forEach(tile=>{
+   if(!tile)return;
+   if(tile.image)lookup.set(normalise(tile.image),tile);
+   if(tile.id!==undefined)lookup.set('id:'+String(tile.id),tile);
+  });
+  Array.from(grid.children).forEach(card=>{
+   const img=card.matches('img')?card:card.querySelector('img');
+   let tile=null;
+   if(img){
+    tile=lookup.get(normalise(img.currentSrc||img.src));
+    if(!tile)tile=window.tiles.find(t=>t&&t.image&&normalise(t.image)===normalise(img.getAttribute('src')));
+   }
+   if(!tile){
+    const id=card.dataset?.id||card.getAttribute('data-id')||card.dataset?.tileId;
+    if(id!==null&&id!==undefined)tile=lookup.get('id:'+String(id));
+   }
+   const visible=showingAll||(!!tile&&tile.folder===selected);
+   card.hidden=!visible;
+   card.style.display=visible?'':'none';
+  });
+  const folders=document.getElementById('folders');
+  if(folders)folders.style.display=showingAll?'':'none';
+ }
+ window.view=function(){
+  const result=originalView.apply(this,arguments);
+  requestAnimationFrame(applyFolderFilter);
+  setTimeout(applyFolderFilter,80);
+  return result;
+ };
+ const grid=document.getElementById('grid');
+ if(grid)new MutationObserver(applyFolderFilter).observe(grid,{childList:true,subtree:true});
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{window.view();applyFolderFilter()},{once:true});
+ else{applyFolderFilter();setTimeout(applyFolderFilter,100);}
+})();
+
