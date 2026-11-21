@@ -2064,104 +2064,64 @@
  new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
 })();
 
-/* KANDY TILE customer view: folders first, no category tabs or featured 10-photo strip.
-   Display-only; preserves all catalogue rows and storage objects. */
-(function kandyFoldersFirstCustomerViewV3(){
- if(window.__kandyFoldersFirstCustomerViewV3)return;
- window.__kandyFoldersFirstCustomerViewV3=true;
+/* KANDY TILE customer catalogue: original global data and original tile renderer.
+   Customer-only: all folders, all 160 designs by default, no category row or 10-photo strip.
+   Admin UI and saved data remain untouched. */
+(function kandyCustomerFoldersAndAllTilesV4(){
+ if(window.__kandyCustomerFoldersAndAllTilesV4)return;
+ window.__kandyCustomerFoldersAndAllTilesV4=true;
  const originalView=window.view;
  if(typeof originalView!=='function')return;
+ const $id=id=>document.getElementById(id);
  const style=document.createElement('style');
- style.id='kandy-folders-first-v3-style';
- style.textContent=\`
-  #kandy-customer-folder-strip{display:flex!important;flex-wrap:wrap!important;gap:10px!important;
-   align-items:center!important;justify-content:flex-start!important;width:100%!important;
-   margin:16px auto 20px!important;padding:8px 12px!important;box-sizing:border-box!important}
-  #kandy-customer-folder-strip button{cursor:pointer!important;border:1px solid #c6a45a!important;
-   background:#111!important;color:#f3d88b!important;border-radius:12px!important;
-   padding:12px 16px!important;font-weight:700!important}
-  #kandy-customer-folder-strip button[aria-pressed="true"]{background:#c6a45a!important;color:#111!important}
-  #kandy-customer-folder-strip .kandy-folder-back{background:#fff!important;color:#222!important;border-color:#ddd!important}
- \`;
+ style.id='kandy-customer-folders-v4-style';
+ style.textContent='#categories{display:none!important}#slideshow{display:none!important}#folders{display:flex!important;flex-wrap:wrap!important;gap:9px!important;align-items:center!important}#folders .folder{cursor:pointer!important}';
  document.head.appendChild(style);
- const gridElement=()=>document.getElementById('grid')||document.querySelector('.tile-grid,.product-grid,[id*="grid"]');
- const clean=v=>String(v||'').trim();
- function folderNames(){
-  const values=[];
-  if(Array.isArray(window.folders))window.folders.forEach(x=>{if(typeof x==='string'&&clean(x))values.push(clean(x));});
-  if(Array.isArray(window.tiles))window.tiles.forEach(x=>{if(x&&clean(x.folder))values.push(clean(x.folder));});
-  return [...new Set(values)];
+ function getFolders(){
+  try{
+   const fromGlobal=Array.isArray(folders)?folders:[];
+   const fromTiles=Array.isArray(tiles)?tiles.map(t=>t&&t.folder).filter(Boolean):[];
+   return [...new Set([...fromGlobal,...fromTiles].map(x=>String(x).trim()).filter(Boolean))];
+  }catch(_){return []}
  }
- function hideCategoryAndFeatured(){
-  const grid=gridElement();if(!grid)return;
-  document.querySelectorAll('button,[role="tab"],a,label,span,div').forEach(el=>{
-   if(el.children.length>3||clean(el.textContent).toLowerCase()!=='tiles'||el.closest('#kandy-customer-folder-strip'))return;
-   const target=el.closest('button,[role="tab"],a')||el,group=target.parentElement;
-   if(group&&group!==document.body&&group.querySelectorAll('button,[role="tab"]').length>=2)group.style.setProperty('display','none','important');
-   else target.style.setProperty('display','none','important');
-  });
-  const gridTop=grid.getBoundingClientRect().top+window.scrollY,candidates=[];
-  document.querySelectorAll('body *').forEach(el=>{
-   if(el===grid||el.closest('#kandy-customer-folder-strip')||grid.contains(el))return;
-   const imgs=el.querySelectorAll?el.querySelectorAll('img').length:0;
-   if(imgs<8||imgs>12)return;
-   const r=el.getBoundingClientRect(),top=r.top+window.scrollY;
-   if(top>=gridTop||r.width<150||r.height<60)return;
-   candidates.push({el,area:r.width*r.height});
-  });
-  if(candidates.length){
-   candidates.sort((a,b)=>a.area-b.area);
-   candidates[0].el.style.setProperty('display','none','important');
-   candidates[0].el.setAttribute('data-kandy-hidden-feature-strip','true');
-  }
- }
- function ensureFolderStrip(){
-  const grid=gridElement(),names=folderNames();if(!grid||!names.length)return;
-  let strip=document.getElementById('kandy-customer-folder-strip');
-  if(!strip){strip=document.createElement('nav');strip.id='kandy-customer-folder-strip';strip.setAttribute('aria-label','Tile folders');grid.parentNode.insertBefore(strip,grid);}
-  const signature=JSON.stringify(names);
-  if(strip.dataset.folderSignature!==signature){
-   strip.replaceChildren();
-   const back=document.createElement('button');back.type='button';back.className='kandy-folder-back';back.textContent='All Folders';
-   back.addEventListener('click',()=>{window.active='';if(typeof window.view==='function')window.view();});
-   strip.appendChild(back);
-   names.forEach(name=>{
-    const b=document.createElement('button');b.type='button';b.textContent=name;
-    b.addEventListener('click',()=>{window.active=name;if(typeof window.view==='function')window.view();});
-    strip.appendChild(b);
-   });
-   strip.dataset.folderSignature=signature;
-  }
-  const selected=clean(window.active);
-  Array.from(strip.querySelectorAll('button')).forEach((b,i)=>{
-   const name=i===0?'':names[i-1];
-   b.setAttribute('aria-pressed',String(selected===name));
+ function drawFolders(){
+  const box=$id('folders'),names=getFolders();
+  if(!box||!names.length)return;
+  box.replaceChildren();
+  const all=document.createElement('button');
+  all.type='button';all.className='folder'+(active==='All Collections'?' active':'');
+  all.textContent='All Folders (160)';
+  all.onclick=()=>{active='All Collections';activeCategory=null;$id('search').value='';window.view();};
+  box.appendChild(all);
+  names.forEach(name=>{
+   const b=document.createElement('button');b.type='button';
+   b.className='folder'+(active===name?' active':'');
+   let count=0;try{count=tiles.filter(t=>t.folder===name).length}catch(_){}
+   b.textContent=name+' ('+count+')';
+   b.onclick=()=>{active=name;activeCategory=null;$id('search').value='';window.view();};
+   box.appendChild(b);
   });
  }
- function normUrl(v){try{return new URL(v,location.href).href.split('?')[0]}catch(_){return String(v||'').split('?')[0]}}
- function applyFolderFilter(){
-  const grid=gridElement(),list=window.tiles;if(!grid||!Array.isArray(list))return;
-  const selected=clean(window.active),byUrl=new Map(),byId=new Map();
-  list.forEach(t=>{if(!t)return;if(t.image)byUrl.set(normUrl(t.image),t);if(t.id!=null)byId.set(String(t.id),t);});
-  Array.from(grid.children).forEach(card=>{
-   if(card.id==='kandy-customer-folder-strip')return;
-   const img=card.matches('img')?card:card.querySelector('img');
-   let tile=img?(byUrl.get(normUrl(img.currentSrc||img.src))||byUrl.get(normUrl(img.getAttribute('src')))):null;
-   if(!tile){const id=card.dataset?.id||card.getAttribute('data-id')||card.dataset?.tileId;if(id!=null)tile=byId.get(String(id));}
-   if(!tile&&img)tile=list.find(t=>t&&t.image&&normUrl(t.image)===normUrl(img.getAttribute('src')));
-   const show=!selected||selected==='All Folders'||selected==='All Collections'||selected==='All'||(!!tile&&clean(tile.folder)===selected);
-   card.hidden=!show;card.style.display=show?'':'none';
-  });
- }
- function refresh(){hideCategoryAndFeatured();ensureFolderStrip();applyFolderFilter();}
  window.view=function(){
+  try{
+   activeCategory=null;
+   if(active!=='All Collections'&&!getFolders().includes(active))active='All Collections';
+  }catch(_){}
   const result=originalView.apply(this,arguments);
-  requestAnimationFrame(refresh);setTimeout(refresh,100);setTimeout(refresh,350);return result;
+  const cat=$id('categories');if(cat)cat.style.setProperty('display','none','important');
+  const slides=$id('slideshow');if(slides)slides.style.setProperty('display','none','important');
+  drawFolders();
+  return result;
  };
- const start=()=>{
-  refresh();
-  const observer=new MutationObserver(()=>refresh());
+ function start(){
+  const cat=$id('categories');if(cat)cat.style.setProperty('display','none','important');
+  const slides=$id('slideshow');if(slides)slides.style.setProperty('display','none','important');
+  if(typeof window.view==='function')window.view();
+  const observer=new MutationObserver(()=>{
+   const c=$id('categories');if(c)c.style.setProperty('display','none','important');
+   const sl=$id('slideshow');if(sl)sl.style.setProperty('display','none','important');
+  });
   observer.observe(document.body,{childList:true,subtree:true});
- };
+ }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
