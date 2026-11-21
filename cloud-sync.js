@@ -1601,3 +1601,38 @@
  const observer=new MutationObserver(()=>apply());
  observer.observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* Add a small admin icon beside the public Admin navigation label only. */
+(function addPublicAdminLabelIcon(){
+ if(window.__kandyPublicAdminIconV1)return;
+ window.__kandyPublicAdminIconV1=true;
+ function apply(){
+  const controls=Array.from(document.querySelectorAll('a,button,[role="button"]'));
+  controls.forEach(control=>{
+   if((control.textContent||'').replace(/\\s+/g,' ').trim().toLowerCase()!=='admin')return;
+   if(control.querySelector('.kandy-admin-nav-icon'))return;
+   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+   svg.setAttribute('viewBox','0 0 24 24');
+   svg.setAttribute('width','17');svg.setAttribute('height','17');
+   svg.setAttribute('aria-hidden','true');svg.setAttribute('focusable','false');
+   svg.classList.add('kandy-admin-nav-icon');
+   svg.innerHTML='<path d="M12 3 20 6v5.2c0 5-3.4 8.4-8 10.8-4.6-2.4-8-5.8-8-10.8V6l8-3Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="9" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8.5 16c.6-2 1.8-3 3.5-3s2.9 1 3.5 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>';
+   const wrap=document.createElement('span');
+   wrap.className='kandy-admin-icon-wrap';
+   wrap.setAttribute('aria-hidden','true');
+   wrap.appendChild(svg);
+   control.insertBefore(wrap,control.firstChild);
+   control.classList.add('kandy-admin-icon-added');
+  });
+  if(!document.getElementById('kandy-admin-nav-icon-style')){
+   const style=document.createElement('style');
+   style.id='kandy-admin-nav-icon-style';
+   style.textContent='.kandy-admin-icon-added{display:inline-flex!important;align-items:center!important;gap:7px!important}.kandy-admin-icon-wrap{display:inline-flex!important;align-items:center!important;justify-content:center!important;color:#d8b45f!important;flex:0 0 auto!important}.kandy-admin-nav-icon{display:block!important;filter:drop-shadow(0 1px 3px rgba(0,0,0,.25))}';
+   document.head.appendChild(style);
+  }
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+ const observer=new MutationObserver(()=>apply());
+ observer.observe(document.documentElement,{childList:true,subtree:true});
+})();
