@@ -1764,3 +1764,44 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
  new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* Ensure the banner's black background itself carries visible gold and red accents. */
+(function strengthenBlackGoldRedBannerBackground(){
+ if(window.__kandyStrongBlackGoldRedBgV1)return;
+ window.__kandyStrongBlackGoldRedBgV1=true;
+ function apply(){
+  const hero=document.querySelector('.kandy-public-colour-hero');
+  if(!hero)return;
+  const parent=hero.parentElement;
+  if(parent)parent.classList.add('kandy-banner-blended-surround');
+  if(!document.getElementById('kandy-strong-black-gold-red-bg-style')){
+   const st=document.createElement('style');st.id='kandy-strong-black-gold-red-bg-style';
+   st.textContent=`
+    .kandy-public-colour-hero,
+    .kandy-banner-blended-surround{
+     background:
+      radial-gradient(ellipse at 8% 18%,rgba(190,25,43,.28),transparent 28%),
+      radial-gradient(ellipse at 88% 78%,rgba(220,178,83,.24),transparent 32%),
+      linear-gradient(125deg,rgba(196,27,47,.10) 0%,transparent 38%,rgba(218,177,82,.12) 72%,transparent 100%),
+      linear-gradient(135deg,#030303 0%,#11100d 48%,#050505 100%)!important;
+     background-color:#050505!important;
+    }
+    .kandy-public-colour-hero{
+     border:0!important;outline:0!important;
+     box-shadow:none!important;
+    }
+    .kandy-public-colour-hero:before{
+     border:0!important;outline:0!important;
+     background:linear-gradient(135deg,transparent 0 42%,rgba(201,30,49,.12) 50%,transparent 58%)!important;
+    }
+    .kandy-public-colour-hero:after{
+     background:linear-gradient(90deg,transparent,#a77c31 16%,#f5dfa4 42%,#c21f35 58%,#e8c56f 82%,transparent)!important;
+    }
+   `;
+   document.head.appendChild(st);
+  }
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+ new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
+})();
