@@ -2080,10 +2080,10 @@
   return fromTiles.length?fromTiles:['Tiles'];
  };
  const categoryFolders=cat=>{
-  const found=[...new Set(rows().filter(x=>x.collection===cat&&x.name&&x.name!=='__category__').map(x=>x.name))];
-  if(found.length)return found;
-  if(cat==='Tiles')return Array.isArray(folders)?folders.slice():[];
-  return [];
+  const mapped=rows().filter(x=>x.collection===cat&&x.name&&x.name!=='__category__'&&Array.isArray(folders)&&folders.includes(x.name)).map(x=>x.name);
+  const used=(Array.isArray(tiles)?tiles:[]).filter(t=>(t.category||'Tiles')===cat&&t.folder).map(t=>t.folder);
+  const all=cat==='Tiles'?[...used,...(Array.isArray(folders)?folders:[])]:[...mapped,...used];
+  return [...new Set(all)];
  };
  const saveNow=()=>{try{if(typeof save==='function')save()}catch(e){console.error(e)}};
  const ensureRows=()=>{
