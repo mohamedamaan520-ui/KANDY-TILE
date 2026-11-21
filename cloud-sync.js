@@ -1161,19 +1161,31 @@
     style.id = 'kandy-public-hero-refine-style';
     style.textContent = `
       .kandy-public-colour-hero{
+        position:relative!important;isolation:isolate!important;overflow:hidden!important;
         background:
-          radial-gradient(ellipse at 9% 0%,rgba(255,105,165,.56),transparent 37%),
-          radial-gradient(ellipse at 95% 12%,rgba(255,190,92,.40),transparent 34%),
-          radial-gradient(ellipse at 78% 100%,rgba(60,226,204,.38),transparent 40%),
-          radial-gradient(ellipse at 32% 100%,rgba(130,112,255,.40),transparent 43%),
-          linear-gradient(120deg,#21143d 0%,#482451 34%,#1b4568 70%,#07565a 100%)!important;
-        border-radius:28px!important;
-        box-shadow:0 20px 58px rgba(19,18,55,.30),inset 0 1px 0 rgba(255,255,255,.22)!important;
+          linear-gradient(132deg,transparent 0 57%,rgba(221,180,83,.10) 57.2%,transparent 57.7%),
+          linear-gradient(42deg,transparent 0 72%,rgba(231,194,105,.18) 72.2%,transparent 72.7%),
+          radial-gradient(ellipse at 86% 48%,rgba(173,133,48,.18),transparent 38%),
+          linear-gradient(112deg,#050505 0%,#101010 58%,#050505 100%)!important;
+        border:1px solid rgba(211,174,91,.42)!important;border-radius:0!important;
+        box-shadow:0 18px 42px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,224,153,.16)!important;
       }
+      .kandy-public-colour-hero:before,.kandy-public-colour-hero:after{
+        content:"";position:absolute;z-index:-1;pointer-events:none;height:2px;
+        background:linear-gradient(90deg,transparent,#f7dc8b,#b78b35,transparent);
+        filter:drop-shadow(0 0 7px rgba(245,205,105,.75));
+      }
+      .kandy-public-colour-hero:before{left:0;right:34%;top:0;transform:skewY(-2deg)}
+      .kandy-public-colour-hero:after{left:0;right:28%;bottom:0;transform:skewY(2deg)}
       .kandy-public-colour-hero h1{
-        background:linear-gradient(100deg,#fff 0%,#ffe6a3 32%,#ff9fc8 65%,#a5f1ff 100%);
+        background:linear-gradient(100deg,#fff8df 0%,#f5d77e 48%,#fff1c2 100%);
         -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+        text-shadow:0 0 18px rgba(229,190,91,.18)!important;
       }
+      .kandy-public-colour-hero a[href^="tel:"],.kandy-public-colour-hero a[href*="wa.me"],.kandy-public-colour-hero a[href*="whatsapp"]{
+        background:linear-gradient(135deg,#171717,#292316)!important;border:1px solid #b9964d!important;color:#fff4cf!important;
+      }
+      .kandy-public-colour-hero a[href^="tel:"] svg,.kandy-public-colour-hero a[href*="wa.me"] svg,.kandy-public-colour-hero a[href*="whatsapp"] svg{color:#e6c36d!important}
       .kandy-public-colour-hero a[href^="tel:"],
       .kandy-public-colour-hero a[href*="wa.me"],
       .kandy-public-colour-hero a[href*="whatsapp"]{border-radius:14px!important}
