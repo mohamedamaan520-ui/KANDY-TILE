@@ -1198,3 +1198,83 @@
   const observer = new MutationObserver(() => apply());
   observer.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
 })();
+
+
+/* Apply the black-and-gold finish to the complete public hero box, not just its text area. */
+(function stylePublicHeroOuterBox(){
+  if (window.__kandyPublicHeroOuterBoxV1) return;
+  window.__kandyPublicHeroOuterBoxV1 = true;
+  function apply(){
+    const heading = Array.from(document.querySelectorAll('h1,h2')).find(el =>
+      /REFLECT\\s+YOUR\\s+DREAM\\.?/i.test((el.textContent || '').trim())
+    );
+    if (!heading) return;
+    let contentBox = heading.parentElement;
+    while (contentBox && contentBox !== document.body) {
+      const txt = (contentBox.innerText || '').replace(/\\s+/g,' ');
+      if (/Explore our tile collections/i.test(txt) &&
+          /035\\s*222\\s*3333/.test(txt) &&
+          /071\\s*3?\\s*222\\s*888/.test(txt)) break;
+      contentBox = contentBox.parentElement;
+    }
+    if (!contentBox || contentBox === document.body) return;
+
+    // Find the widest compact ancestor that contains the complete hero content.
+    let box = contentBox;
+    let bestWidth = 0;
+    let node = contentBox;
+    for (let depth = 0; node && node !== document.body && depth < 5; depth++, node = node.parentElement) {
+      const rect = node.getBoundingClientRect();
+      const textLength = (node.innerText || '').trim().length;
+      if (rect.width >= Math.min(window.innerWidth * 0.78, 520) &&
+          rect.height >= 130 && rect.height <= 720 &&
+          textLength <= 1100 && rect.width > bestWidth) {
+        box = node;
+        bestWidth = rect.width;
+      }
+    }
+
+    box.classList.add('kandy-public-colour-hero-shell');
+    if (contentBox !== box) contentBox.classList.add('kandy-public-colour-hero-inner');
+
+    if (document.getElementById('kandy-public-hero-outer-box-style')) return;
+    const style = document.createElement('style');
+    style.id = 'kandy-public-hero-outer-box-style';
+    style.textContent = `
+      .kandy-public-colour-hero-shell{
+        position:relative!important;isolation:isolate!important;overflow:hidden!important;
+        box-sizing:border-box!important;
+        background:
+          linear-gradient(132deg,transparent 0 57%,rgba(221,180,83,.10) 57.2%,transparent 57.7%),
+          linear-gradient(42deg,transparent 0 72%,rgba(231,194,105,.16) 72.2%,transparent 72.7%),
+          radial-gradient(ellipse at 86% 48%,rgba(173,133,48,.18),transparent 38%),
+          linear-gradient(112deg,#050505 0%,#101010 58%,#050505 100%)!important;
+        border:1px solid rgba(211,174,91,.48)!important;
+        border-radius:24px!important;
+        box-shadow:0 18px 42px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,224,153,.18)!important;
+      }
+      .kandy-public-colour-hero-inner:not(.kandy-public-colour-hero-shell){
+        background:transparent!important;border:0!important;box-shadow:none!important;
+      }
+      .kandy-public-colour-hero-shell:before,
+      .kandy-public-colour-hero-shell:after{
+        content:"";position:absolute;z-index:0;pointer-events:none;height:2px;
+        background:linear-gradient(90deg,transparent,#f7dc8b,#b78b35,transparent);
+        filter:drop-shadow(0 0 7px rgba(245,205,105,.75));
+      }
+      .kandy-public-colour-hero-shell:before{left:0;right:34%;top:0;transform:skewY(-2deg)}
+      .kandy-public-colour-hero-shell:after{left:0;right:28%;bottom:0;transform:skewY(2deg)}
+      .kandy-public-colour-hero-shell > *,
+      .kandy-public-colour-hero-inner > *{position:relative;z-index:1}
+      @media(max-width:640px){
+        .kandy-public-colour-hero-shell{border-radius:20px!important}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',apply,{once:true});
+  else apply();
+  const observer = new MutationObserver(() => apply());
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+  window.addEventListener('resize',apply,{passive:true});
+})();
