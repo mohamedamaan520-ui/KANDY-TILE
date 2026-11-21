@@ -1636,3 +1636,70 @@
  const observer=new MutationObserver(()=>apply());
  observer.observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* Premium bathroom and tile showroom theme: public banner only. */
+(function premiumBathroomShowroomBannerOnly(){
+ if(window.__kandyPremiumShowroomBannerV1)return;
+ window.__kandyPremiumShowroomBannerV1=true;
+ function apply(){
+  if(document.getElementById('kandy-premium-showroom-banner-style'))return;
+  const st=document.createElement('style');
+  st.id='kandy-premium-showroom-banner-style';
+  st.textContent=`
+   .kandy-public-colour-hero{
+    position:relative!important;isolation:isolate!important;overflow:hidden!important;
+    color:#292821!important;
+    background:
+     linear-gradient(90deg,rgba(255,253,247,.97),rgba(245,239,226,.93) 54%,rgba(231,222,203,.92)),
+     repeating-linear-gradient(0deg,transparent 0 79px,rgba(91,82,65,.07) 80px 81px),
+     repeating-linear-gradient(90deg,transparent 0 79px,rgba(91,82,65,.07) 80px 81px)!important;
+    border:1px solid #b9a982!important;border-radius:22px!important;
+    box-shadow:0 20px 48px rgba(37,32,22,.16),inset 0 1px 0 #fff!important;
+   }
+   .kandy-public-colour-hero:before{
+    content:"";position:absolute;inset:9px;z-index:0;pointer-events:none;
+    border:1px solid rgba(151,128,79,.35);border-radius:15px;
+    background:
+     linear-gradient(135deg,transparent 0 48%,rgba(255,255,255,.25) 49%,transparent 51%),
+     repeating-linear-gradient(0deg,transparent 0 119px,rgba(128,113,82,.045) 120px 121px),
+     repeating-linear-gradient(90deg,transparent 0 119px,rgba(128,113,82,.045) 120px 121px);
+   }
+   .kandy-public-colour-hero:after{
+    content:"";position:absolute;left:8%;right:8%;top:0;height:3px;z-index:0;
+    background:linear-gradient(90deg,transparent,#a68a52 18%,#e7d8b2 50%,#a68a52 82%,transparent);
+   }
+   .kandy-public-colour-hero>*{position:relative!important;z-index:1!important}
+   .kandy-public-colour-hero h1{
+    color:#28271f!important;-webkit-text-fill-color:#28271f!important;
+    background:none!important;text-shadow:none!important;
+    font-weight:900!important;letter-spacing:.035em!important;
+   }
+   .kandy-public-colour-hero h2,.kandy-public-colour-hero h3{
+    color:#76623c!important;-webkit-text-fill-color:#76623c!important;
+    background:rgba(255,255,255,.58)!important;border:1px solid rgba(166,138,82,.25)!important;
+    border-radius:9px!important;
+   }
+   .kandy-public-colour-hero p{color:#514c40!important}
+   .kandy-public-colour-hero img{
+    border:5px solid rgba(255,255,255,.8)!important;
+    outline:1px solid #b9a982!important;border-radius:14px!important;
+    box-shadow:0 15px 30px rgba(43,37,25,.2)!important;
+   }
+   .kandy-public-colour-hero a[href^="tel:"],
+   .kandy-public-colour-hero a[href*="wa.me"],
+   .kandy-public-colour-hero a[href*="whatsapp"]{
+    background:linear-gradient(135deg,#37362e,#171713)!important;
+    color:#fff!important;border:1px solid #b9a982!important;
+    box-shadow:0 8px 18px rgba(36,32,23,.22)!important;
+   }
+   @media(max-width:768px){
+    .kandy-public-colour-hero{border-radius:17px!important}
+    .kandy-public-colour-hero:before{inset:6px;border-radius:12px}
+   }
+  `;
+  document.head.appendChild(st);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+ new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
+})();
